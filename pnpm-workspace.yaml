@@ -1,0 +1,8 @@
+packages:
+  - backend
+  - mobile
+
+ignoredBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - prisma
