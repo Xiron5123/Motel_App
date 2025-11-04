@@ -34,7 +34,7 @@
 - ✅ Search & Filter (text, price, amenities, geo-distance)
 - ✅ Photos management
 - ✅ Pagination
-- ⏳ **Sort by distance & price** (UX improvement)
+- ✅ **Sort by distance & price** (UX improvement)
 
 #### **Day 4 - Favorites & Booking**
 - ⏳ Favorites API (save/remove/list)

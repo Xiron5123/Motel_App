@@ -32,7 +32,7 @@ export class ListingsService {
   }
 
   async findAll(query: QueryListingDto) {
-    const { q, priceMin, priceMax, amenities, lat, lng, radius, status, page = 1, limit = 10 } = query;
+    const { q, priceMin, priceMax, amenities, lat, lng, radius, status, sortBy, page = 1, limit = 10 } = query;
 
     const skip = (page - 1) * limit;
 
@@ -70,6 +70,19 @@ export class ListingsService {
       where.status = 'AVAILABLE';
     }
 
+    // Determine sort order
+    let orderBy: any = { createdAt: 'desc' }; // Default
+    if (sortBy === 'price_asc') {
+      orderBy = { price: 'asc' };
+    } else if (sortBy === 'price_desc') {
+      orderBy = { price: 'desc' };
+    } else if (sortBy === 'created_asc') {
+      orderBy = { createdAt: 'asc' };
+    } else if (sortBy === 'created_desc') {
+      orderBy = { createdAt: 'desc' };
+    }
+    // Note: distance sorting done after query if lat/lng provided
+
     // Get listings
     const [listings, total] = await Promise.all([
       this.prisma.listing.findMany({
@@ -94,19 +107,31 @@ export class ListingsService {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       this.prisma.listing.count({ where }),
     ]);
 
     // Apply geo filter if provided (Haversine distance)
     let filteredListings = listings;
-    if (lat !== undefined && lng !== undefined && radius !== undefined) {
-      filteredListings = listings.filter((listing) => {
-        if (!listing.lat || !listing.lng) return false;
-        const distance = this.calculateDistance(lat, lng, listing.lat, listing.lng);
-        return distance <= radius;
-      });
+    if (lat !== undefined && lng !== undefined) {
+      // Calculate distance for each listing
+      filteredListings = listings
+        .map((listing) => ({
+          ...listing,
+          distance: listing.lat && listing.lng 
+            ? this.calculateDistance(lat, lng, listing.lat, listing.lng)
+            : null,
+        }))
+        .filter((listing) => {
+          if (!listing.distance) return false;
+          return radius ? listing.distance <= radius : true;
+        });
+
+      // Sort by distance if requested
+      if (sortBy === 'distance') {
+        filteredListings.sort((a: any, b: any) => (a.distance || 0) - (b.distance || 0));
+      }
     }
 
     return {

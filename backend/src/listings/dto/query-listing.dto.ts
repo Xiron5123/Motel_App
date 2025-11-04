@@ -66,4 +66,14 @@ export class QueryListingDto {
   @IsNumber()
   @Min(1)
   limit?: number = 10;
+
+  @ApiProperty({ 
+    required: false, 
+    example: 'price_asc',
+    enum: ['price_asc', 'price_desc', 'distance', 'created_desc', 'created_asc'],
+    description: 'Sort order'
+  })
+  @IsOptional()
+  @IsString()
+  sortBy?: 'price_asc' | 'price_desc' | 'distance' | 'created_desc' | 'created_asc';
 }
