@@ -1,38 +1,59 @@
 # ROADMAP - Ứng Dụng Cho Thuê Trọ (Backend + Mobile)
-## MVP Timeline: 2 tuần (14 ngày)
+## MVP Timeline: 10-12 ngày
+## Cập nhật: 04/11/2025
+
+---
+
+## 📊 TIẾN ĐỘ HIỆN TẠI
+
+**Phase:** Backend Development  
+**Tiến độ:** Day 3/12 (25%)  
+**Commit:** `Day 1-3: Initial setup + Auth + Users + Listings CRUD`  
+**Repository:** [github.com/Xiron5123/Motel_App](https://github.com/Xiron5123/Motel_App)
+
+### ✅ Hoàn thành:
+- Day 1: Project setup + Database schema
+- Day 2: Auth + Users + Become Landlord flow
+- Day 3: Listings CRUD + Search & Filter
+
+### ⏳ Tiếp theo:
+- Day 4: Favorites + BookingRequest
+- Day 5: Chat realtime (Socket.IO)
+- Day 6-7: Mobile app (React Native + Expo)
 
 ---
 
 ## 🎯 MỤC TIÊU & PHẠM VI MVP
 
-### Người thuê trọ (Renter):
-- ✅ Đăng ký/Đăng nhập
+### Người dùng (User → Renter):
+- ✅ Đăng ký/Đăng nhập (mặc định role = RENTER)
 - ✅ Xem danh sách trọ (tìm kiếm, lọc theo giá/tiện ích/khoảng cách)
 - ✅ Xem chi tiết phòng trọ (ảnh, mô tả, giá, tiện ích)
-- ✅ Lưu tin yêu thích
-- ✅ Gửi yêu cầu thuê
-- ✅ Chat realtime với chủ trọ
+- ⏳ Lưu tin yêu thích
+- ⏳ Gửi yêu cầu thuê
+- ⏳ Chat realtime với chủ trọ
 
-### Chủ trọ (Landlord):
-- ✅ Đăng ký/Đăng nhập
+### Nâng cấp lên Chủ trọ (Landlord):
+- ✅ **POST /users/become-landlord** (upgrade role)
 - ✅ Đăng tin cho thuê (ảnh, giá, địa chỉ, mô tả, tiện ích)
 - ✅ Chỉnh sửa/Xóa tin đăng
-- ✅ Quản lý yêu cầu thuê (chấp nhận/từ chối)
-- ✅ Chat realtime với người thuê
+- ⏳ Quản lý yêu cầu thuê (chấp nhận/từ chối)
+- ⏳ Chat realtime với người thuê
 
 ### Tính năng chung:
-- ✅ Chat realtime 1-1 (Socket.IO)
-- ✅ Upload ảnh (Cloudinary)
-- ✅ Thông báo push (booking, message)
-- ✅ Phân quyền người dùng (RENTER/LANDLORD)
+- ⏳ Chat realtime 1-1 (Socket.IO)
+- ⏳ Upload ảnh (Cloudinary integration)
+- ⏳ Thông báo push (booking, message)
+- ✅ Phân quyền động (RENTER → LANDLORD)
 
-### ❌ Ngoài phạm vi (để backlog):
-- Thanh toán online
+### ❌ Ngoài phạm vi MVP (để backlog):
+- Thanh toán online (Stripe/VNPay)
 - Review/Rating
 - KYC/Verification
-- Map tích hợp Google Maps
+- Map tích hợp Google Maps (chỉ có lat/lng)
 - Analytics dashboard
 - Admin CMS riêng
+- Web Frontend
 
 ---
 
@@ -40,30 +61,30 @@
 
 ### Backend:
 - **Framework:** NestJS (Node.js + TypeScript)
-- **Database:** PostgreSQL
+- **Database:** PostgreSQL (local)
 - **ORM:** Prisma
-- **Auth:** JWT + Refresh Token
-- **Realtime:** Socket.IO
-- **Upload:** Cloudinary (signed URL)
-- **Validation:** Zod + class-validator
+- **Auth:** JWT + Refresh Token (HttpOnly cookies)
+- **Realtime:** Socket.IO (chưa implement)
+- **Upload:** Cloudinary signed URL (chưa implement)
+- **Validation:** class-validator + class-transformer
 - **API Docs:** Swagger/OpenAPI
-- **Logging:** Pino
+- **Security:** bcrypt, CORS, Guards
 
-### Mobile:
+### Mobile (Chưa bắt đầu):
 - **Framework:** React Native + Expo
 - **State:** React Query (TanStack Query)
 - **Navigation:** Expo Router
-- **UI:** React Native Paper / NativeBase
+- **UI:** React Native Paper
 - **Notifications:** Expo Notifications
 - **Storage:** expo-secure-store (tokens)
 - **Chat:** Socket.IO client
 
 ### DevOps:
-- **CI/CD:** GitHub Actions
-- **Backend Deploy:** Railway / Render / Fly.io
-- **Mobile Build:** EAS Build (Expo)
-- **Monitoring:** Sentry
-- **Environment:** Docker Compose (local dev)
+- **Version Control:** Git + GitHub
+- **Package Manager:** pnpm (monorepo)
+- **Local DB:** Docker Compose (PostgreSQL + pgAdmin)
+- **Backend Deploy:** Railway / Render (chưa deploy)
+- **Mobile Build:** EAS Build (chưa cấu hình)
 
 ---
 
@@ -297,59 +318,68 @@ model RefreshToken {
 
 ## 📅 CHI TIẾT TIMELINE
 
-### **TUẦN 1: Backend Core + Mobile Foundation**
+### **✅ TUẦN 1: Backend Core (HOÀN THÀNH)**
 
-#### **Day 1: Project Setup & Database**
+#### **✅ Day 1: Project Setup & Database**
 **Backend:**
-- [ ] Khởi tạo monorepo (pnpm workspace: `backend/`, `mobile/`)
-- [ ] Setup NestJS project (TypeScript, ESLint, Prettier)
-- [ ] Cấu hình Prisma + PostgreSQL schema
-- [ ] Migration đầu tiên
-- [ ] Docker Compose (Postgres, pgAdmin)
-- [ ] Seed data mẫu (2 users, 5 listings)
+- ✅ Khởi tạo monorepo (pnpm workspace: `backend/`, `mobile/`)
+- ✅ Setup NestJS project (TypeScript, ESLint, Prettier)
+- ✅ Cấu hình Prisma + PostgreSQL schema (10 models)
+- ✅ Migration đầu tiên
+- ✅ Docker Compose (Postgres, pgAdmin)
+- ✅ Seed data mẫu
 
 **Deliverables:** 
-- Monorepo structure
-- Database running locally
-- Seed data
+- ✅ Monorepo structure
+- ✅ Database running locally
+- ✅ Git + GitHub setup
 
 ---
 
-#### **Day 2: Backend Auth & User Management**
+#### **✅ Day 2: Auth & User Management**
 **Backend:**
-- [ ] Module Auth: Register, Login
-- [ ] JWT strategy (access token 15min, refresh token 7 days)
-- [ ] Refresh token endpoint
-- [ ] Password hashing (bcrypt)
-- [ ] Guards: JwtAuthGuard, RolesGuard
-- [ ] Module Users: GET /me, PATCH /me
-- [ ] Global exception filter
-- [ ] Validation pipes (Zod)
-- [ ] Swagger setup
+- ✅ Module Auth: Register, Login, Refresh, Logout
+- ✅ JWT strategy (access token 15min, refresh token 7 days)
+- ✅ Password hashing (bcrypt)
+- ✅ Guards: JwtAuthGuard, RolesGuard
+- ✅ **Module Users** (mới):
+  - ✅ GET /users/me
+  - ✅ PATCH /users/me
+  - ✅ **POST /users/become-landlord** (upgrade role)
+- ✅ Global validation pipe
+- ✅ Swagger setup
 
 **Testing:**
-- [ ] Postman collection: Auth + Users
+- ✅ PowerShell scripts test flow
 
 **Deliverables:**
-- Auth API hoàn chỉnh
-- Swagger docs tại `/api/docs`
+- ✅ Auth API hoàn chỉnh
+- ✅ **User role upgrade flow**
+- ✅ Swagger docs: http://localhost:3000/api/docs
 
 ---
 
-#### **Day 3: Listings CRUD & Photos**
+#### **✅ Day 3: Listings CRUD & Search**
 **Backend:**
-- [ ] Module Listings: CRUD endpoints
-- [ ] Ownership validation (landlord chỉ sửa listing của mình)
-- [ ] Module Photos: Add/Remove photos
-- [ ] Cloudinary integration (signed upload URL)
-- [ ] Listings search: text (title, address), price range
+- ✅ Module Listings: CRUD endpoints
+- ✅ Ownership validation (LANDLORD only)
+- ✅ Photos management (Add/Remove)
+- ✅ Search & Filter:
+  - ✅ Text search (title, description, address)
+  - ✅ Price range (priceMin, priceMax)
+  - ✅ Amenities filter
+  - ✅ Geo-distance (Haversine formula)
+  - ✅ Pagination
+- ✅ GET /listings/my (landlord's listings)
 
 **Testing:**
-- [ ] Postman: Tạo listing + upload ảnh
+- ✅ Seed 2 listings
+- ✅ Test GET /listings with filters
 
 **Deliverables:**
-- Listings API
-- Cloudinary upload working
+- ✅ Listings API hoàn chỉnh
+- ✅ Search & filter working
+- ❌ Cloudinary (chỉ có URL, chưa tích hợp upload)
 
 ---
 
