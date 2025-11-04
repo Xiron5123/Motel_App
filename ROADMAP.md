@@ -34,17 +34,22 @@
 - ✅ Search & Filter (text, price, amenities, geo-distance)
 - ✅ Photos management
 - ✅ Pagination
+- ⏳ **Sort by distance & price** (UX improvement)
 
 #### **Day 4 - Favorites & Booking**
 - ⏳ Favorites API (save/remove/list)
 - ⏳ BookingRequest CRUD
 - ⏳ State machine (PENDING → ACCEPTED/REJECTED)
 - ⏳ Notifications records
+- ⏳ **Realtime notification** (socket.io)
+- ⏳ **Status UI states** (pending, accepted, rejected)
 
 #### **Day 5 - Chat Backend**
 - ⏳ Conversation + Message REST API
 - ⏳ Socket.IO gateway
-- ⏳ Realtime events (join, send, typing, read)
+- ⏳ Realtime events (join, send, **typing**, **read**)
+- ⏳ **Typing indicator & seen status**
+- ⏳ **Auto-scroll & last message preview**
 
 #### **Day 6 - Backend QA**
 - ⏳ Validation & error handling
@@ -64,18 +69,20 @@
 
 #### **Day 8 - Listings UI**
 - ⏳ Listings catalog (FlatList)
-- ⏳ Search & Filter UI
+- ⏳ **Clean cards (Airbnb-style): large images, price, distance**
+- ⏳ **Bottom sheet filter modal** (amenities, price range)
 - ⏳ Listing detail screen
 - ⏳ Image carousel
 
 #### **Day 9 - User Actions**
-- ⏳ Favorites UI
+- ⏳ Favorites UI (**swipe to remove**)
 - ⏳ Booking request form
-- ⏳ My bookings screen
+- ⏳ **My bookings: tabs (Upcoming/Past/Pending)**
 - ⏳ Become Landlord flow (mobile)
 
 #### **Day 10 - Landlord Features**
-- ⏳ Create/Edit listing
+- ⏳ **Multi-step listing form** (wizard UI)
+- ⏳ **Photo preview before upload**
 - ⏳ Photo picker & upload (Cloudinary)
 - ⏳ My listings management
 - ⏳ Booking requests management
@@ -83,6 +90,8 @@
 #### **Day 11 - Chat UI**
 - ⏳ Conversations list
 - ⏳ Chat screen (GiftedChat)
+- ⏳ **Custom bubble style, timestamp, avatar**
+- ⏳ **Online/offline status**
 - ⏳ Socket.IO client
 - ⏳ Realtime messaging
 
@@ -90,12 +99,14 @@
 - ⏳ Expo Notifications setup
 - ⏳ Push tokens handling
 - ⏳ Notification triggers (booking, messages)
-- ⏳ Deep linking
+- ⏳ **Deep linking to Booking/Chat**
+- ⏳ **Background push notifications**
 
 #### **Day 13 - Polish**
-- ⏳ Loading & empty states
+- ⏳ **Skeleton loading states**
+- ⏳ **Consistent theme** (font, colors, spacing)
+- ⏳ Empty states
 - ⏳ Error handling & retry
-- ⏳ UI/UX improvements
 - ⏳ Bug fixes
 
 #### **Day 14 - Deploy & Demo**
