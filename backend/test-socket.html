@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Chat Test</title>
+    <style>
+        body { font-family: Arial; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        input, button { padding: 8px; margin: 5px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        #messages { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin: 10px 0; background: #f9f9f9; }
+        .message { padding: 5px; margin: 5px 0; background: white; border-radius: 3px; }
+        .typing { color: #666; font-style: italic; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Socket.IO Chat Test</h1>
+    
+    <div class="section">
+        <h3>1. Kết nối</h3>
+        <input type="text" id="userId" placeholder="User ID (e.g., cmhn245dg00007ek4fjztv7bk)" style="width: 400px;">
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+        <div id="connectionStatus"></div>
+    </div>
+
+    <div class="section">
+        <h3>2. Join Conversation</h3>
+        <input type="text" id="conversationId" placeholder="Conversation ID" style="width: 400px;">
+        <button onclick="joinConversation()">Join</button>
+        <button onclick="leaveConversation()">Leave</button>
+    </div>
+
+    <div class="section">
+        <h3>3. Gửi Message</h3>
+        <input type="text" id="messageContent" placeholder="Nhập tin nhắn..." style="width: 500px;">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div class="section">
+        <h3>4. Typing Indicator</h3>
+        <button onclick="startTyping()">Start Typing</button>
+        <button onclick="stopTyping()">Stop Typing</button>
+        <div id="typingStatus" class="typing"></div>
+    </div>
+
+    <div class="section">
+        <h3>5. Messages</h3>
+        <div id="messages"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        let socket = null;
+        let currentUserId = null;
+        let currentConversationId = null;
+
+        function log(message, type = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            const msgEl = document.createElement('div');
+            msgEl.className = `message ${type}`;
+            msgEl.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            messagesDiv.appendChild(msgEl);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function connect() {
+            currentUserId = document.getElementById('userId').value;
+            if (!currentUserId) {
+                alert('Vui lòng nhập User ID');
+                return;
+            }
+
+            socket = io('http://localhost:3000/chat', {
+                transports: ['websocket']
+            });
+
+            socket.on('connect', () => {
+                log('✅ Connected to Socket.IO', 'success');
+                document.getElementById('connectionStatus').innerHTML = '<span class="success">✅ Connected</span>';
+                
+                // Register user
+                socket.emit('register', { userId: currentUserId });
+            });
+
+            socket.on('disconnect', () => {
+                log('❌ Disconnected', 'error');
+                document.getElementById('connectionStatus').innerHTML = '<span class="error">❌ Disconnected</span>';
+            });
+
+            socket.on('new_message', (message) => {
+                log(`📩 NEW MESSAGE from ${message.sender.name}: ${message.content}`, 'success');
+            });
+
+            socket.on('typing_status', (data) => {
+                const typingDiv = document.getElementById('typingStatus');
+                if (data.typingUsers.length > 0) {
+                    typingDiv.textContent = `${data.typingUsers.length} người đang gõ...`;
+                } else {
+                    typingDiv.textContent = '';
+                }
+            });
+
+            socket.on('message_read', (data) => {
+                log(`✓✓ User ${data.userId} đã đọc tin nhắn`, 'info');
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+        }
+
+        function joinConversation() {
+            currentConversationId = document.getElementById('conversationId').value;
+            if (!socket || !currentConversationId) {
+                alert('Vui lòng connect và nhập Conversation ID');
+                return;
+            }
+
+            socket.emit('join_conversation', { conversationId: currentConversationId }, (response) => {
+                log(`✅ Joined conversation: ${currentConversationId}`, 'success');
+            });
+        }
+
+        function leaveConversation() {
+            if (!socket || !currentConversationId) return;
+            
+            socket.emit('leave_conversation', { conversationId: currentConversationId });
+            log(`👋 Left conversation: ${currentConversationId}`, 'info');
+        }
+
+        function sendMessage() {
+            const content = document.getElementById('messageContent').value;
+            if (!socket || !currentConversationId || !content) {
+                alert('Vui lòng connect, join conversation và nhập message');
+                return;
+            }
+
+            socket.emit('send_message', {
+                conversationId: currentConversationId,
+                userId: currentUserId,
+                content: content
+            }, (response) => {
+                if (response.status === 'sent') {
+                    log(`📤 Sent: ${content}`, 'success');
+                    document.getElementById('messageContent').value = '';
+                } else {
+                    log(`❌ Error: ${response.message}`, 'error');
+                }
+            });
+        }
+
+        function startTyping() {
+            if (!socket || !currentConversationId) return;
+            socket.emit('typing_start', {
+                conversationId: currentConversationId,
+                userId: currentUserId
+            });
+            log('✍️ Started typing...', 'info');
+        }
+
+        function stopTyping() {
+            if (!socket || !currentConversationId) return;
+            socket.emit('typing_stop', {
+                conversationId: currentConversationId,
+                userId: currentUserId
+            });
+            log('✋ Stopped typing', 'info');
+        }
+
+        // Auto-focus message input on Enter
+        document.getElementById('messageContent').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

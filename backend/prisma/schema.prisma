@@ -84,11 +84,14 @@ model BookingRequest {
 }
 
 model Conversation {
-  id           String                    @id @default(cuid())
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
-  participants ConversationParticipant[]
-  messages     Message[]
+  id              String                    @id @default(cuid())
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+  lastMessageAt   DateTime?                 @default(now())
+  participants    ConversationParticipant[]
+  messages        Message[]
+
+  @@index([lastMessageAt])
 }
 
 model ConversationParticipant {
@@ -109,14 +112,14 @@ model Message {
   senderId       String
   content        String?
   imageUrl       String?
-  createdAt      DateTime     @default(now())
+  sentAt         DateTime     @default(now())
   readAt         DateTime?
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([senderId])
-  @@index([createdAt])
+  @@index([sentAt])
 }
 
 model Favorite {
