@@ -7,14 +7,21 @@ export class ChatService {
 
   // Tạo hoặc lấy conversation giữa 2 users
   async getOrCreateConversation(userId1: string, userId2: string) {
-    // Tìm conversation đã tồn tại
-    const existing = await this.prisma.conversation.findFirst({
+    // Tìm conversation đã tồn tại với đúng 2 users này
+    const conversations = await this.prisma.conversation.findMany({
       where: {
-        participants: {
-          every: {
-            userId: { in: [userId1, userId2] },
+        AND: [
+          {
+            participants: {
+              some: { userId: userId1 },
+            },
           },
-        },
+          {
+            participants: {
+              some: { userId: userId2 },
+            },
+          },
+        ],
       },
       include: {
         participants: {
@@ -37,39 +44,86 @@ export class ChatService {
       },
     });
 
+    // Tìm conversation có đúng 2 participants
+    const existing = conversations.find(
+      (conv) => conv.participants.length === 2,
+    );
+
     if (existing) {
       return existing;
     }
 
-    // Tạo mới conversation
-    const conversation = await this.prisma.conversation.create({
-      data: {
-        participants: {
-          create: [
-            { userId: userId1 },
-            { userId: userId2 },
-          ],
+    // Tạo mới conversation (handle race condition)
+    try {
+      const conversation = await this.prisma.conversation.create({
+        data: {
+          participants: {
+            create: [
+              { userId: userId1 },
+              { userId: userId2 },
+            ],
+          },
         },
-      },
-      include: {
-        participants: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar: true,
-                role: true,
+        include: {
+          participants: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  avatar: true,
+                  role: true,
+                },
               },
             },
           },
+          messages: true,
         },
-        messages: true,
-      },
-    });
+      });
 
-    return conversation;
+      return conversation;
+    } catch (error) {
+      // Nếu bị race condition, thử tìm lại
+      if (error.code === 'P2002') {
+        const retryConversations = await this.prisma.conversation.findMany({
+          where: {
+            AND: [
+              { participants: { some: { userId: userId1 } } },
+              { participants: { some: { userId: userId2 } } },
+            ],
+          },
+          include: {
+            participants: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    avatar: true,
+                    role: true,
+                  },
+                },
+              },
+            },
+            messages: {
+              take: 1,
+              orderBy: { sentAt: 'desc' },
+            },
+          },
+        });
+
+        const found = retryConversations.find(
+          (conv) => conv.participants.length === 2,
+        );
+
+        if (found) {
+          return found;
+        }
+      }
+      throw error;
+    }
   }
 
   // Lấy danh sách conversations của user
