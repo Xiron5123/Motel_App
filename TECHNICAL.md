@@ -122,21 +122,36 @@ PATCH  /bookings/:id/status  - Cập nhật status
 
 ### Chat (Day 5)
 ```
-GET    /conversations        - Danh sách conversations
-GET    /conversations/:id    - Chi tiết + messages
-POST   /conversations        - Tạo conversation
-POST   /messages             - Gửi message (REST fallback)
-PATCH  /messages/:id/read    - Đánh dấu đã đọc
+POST   /chat/conversations           - Tạo/lấy conversation với user
+GET    /chat/conversations           - Danh sách conversations
+GET    /chat/conversations/:id       - Chi tiết conversation
+GET    /chat/conversations/:id/messages - Lấy messages (pagination)
+POST   /chat/conversations/:id/messages - Gửi message
+PATCH  /chat/conversations/:id/read  - Đánh dấu đã đọc
 ```
 
 ### WebSocket Events (Day 5)
+**Namespace:** `ws://localhost:3000/chat`
+
+**Client → Server:**
 ```
-connection                    - Kết nối Socket.IO
-join_conversation             - Join room
-send_message                  - Gửi tin nhắn realtime
-typing                        - Đang gõ
-read_message                  - Đã đọc
+register            - Đăng ký user với socket
+join_conversation   - Join vào conversation room
+leave_conversation  - Rời khỏi room
+send_message        - Gửi message (alternative to REST)
+typing_start        - Bắt đầu typing
+typing_stop         - Dừng typing
+mark_read           - Đánh dấu đã đọc
 ```
+
+**Server → Client:**
+```
+new_message         - Nhận message mới
+typing_status       - Trạng thái typing
+message_read        - Thông báo đã đọc
+```
+
+Chi tiết: [SOCKET_EVENTS.md](./backend/SOCKET_EVENTS.md)
 
 ### Notifications (Day 12)
 ```

@@ -6,10 +6,10 @@
 ## 📊 TIẾN ĐỘ
 
 **Phase:** Backend Development  
-**Hoàn thành:** Day 3/14 (21%)  
+**Hoàn thành:** Day 5/14 (36%)  
 **Repository:** [github.com/Xiron5123/Motel_App](https://github.com/Xiron5123/Motel_App)
 
-✅ Day 1-3 | ⏳ Day 4-14
+✅ Day 1-5 | ⏳ Day 6-14
 
 ---
 
@@ -37,19 +37,19 @@
 - ✅ **Sort by distance & price** (UX improvement)
 
 #### **Day 4 - Favorites & Booking**
-- ⏳ Favorites API (save/remove/list)
-- ⏳ BookingRequest CRUD
-- ⏳ State machine (PENDING → ACCEPTED/REJECTED)
-- ⏳ Notifications records
-- ⏳ **Realtime notification** (socket.io)
-- ⏳ **Status UI states** (pending, accepted, rejected)
+- ✅ Favorites API (save/remove/list)
+- ✅ BookingRequest CRUD
+- ✅ State machine (PENDING → ACCEPTED/REJECTED)
+- ✅ Notifications records
+- ✅ **Realtime notification** (socket.io)
+- ✅ **Status UI states** (pending, accepted, rejected)
 
 #### **Day 5 - Chat Backend**
-- ⏳ Conversation + Message REST API
-- ⏳ Socket.IO gateway
-- ⏳ Realtime events (join, send, **typing**, **read**)
-- ⏳ **Typing indicator & seen status**
-- ⏳ **Auto-scroll & last message preview**
+- ✅ Conversation + Message REST API
+- ✅ Socket.IO gateway (`/chat` namespace)
+- ✅ Realtime events (join, send, **typing**, **read**)
+- ✅ **Typing indicator & seen status**
+- ✅ **Auto-scroll & last message preview** (data ready)
 
 #### **Day 6 - Backend QA**
 - ⏳ Validation & error handling
