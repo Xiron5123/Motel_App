@@ -7,7 +7,7 @@ import { AddPhotoDto } from './dto/add-photo.dto';
 
 @Injectable()
 export class ListingsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(landlordId: string, dto: CreateListingDto) {
     const listing = await this.prisma.listing.create({
@@ -28,11 +28,20 @@ export class ListingsService {
       },
     });
 
+    // Auto-upgrade RENTER to LANDLORD
+    const user = await this.prisma.user.findUnique({ where: { id: landlordId } });
+    if (user && user.role === 'RENTER') {
+      await this.prisma.user.update({
+        where: { id: landlordId },
+        data: { role: 'LANDLORD' },
+      });
+    }
+
     return listing;
   }
 
   async findAll(query: QueryListingDto) {
-    const { q, priceMin, priceMax, amenities, lat, lng, radius, status, sortBy, page = 1, limit = 10 } = query;
+    const { q, priceMin, priceMax, amenities, lat, lng, radius, status, sortBy, page = 1, limit = 10, city, district } = query;
 
     const skip = (page - 1) * limit;
 
@@ -40,12 +49,24 @@ export class ListingsService {
     const where: any = {};
 
     // Text search
+    // Text search (Split by words for better results)
     if (q) {
-      where.OR = [
-        { title: { contains: q, mode: 'insensitive' } },
-        { description: { contains: q, mode: 'insensitive' } },
-        { address: { contains: q, mode: 'insensitive' } },
-      ];
+      const searchTerms = q.trim().split(/\s+/);
+      where.AND = searchTerms.map((term) => ({
+        OR: [
+          { title: { contains: term, mode: 'insensitive' } },
+          { description: { contains: term, mode: 'insensitive' } },
+          { address: { contains: term, mode: 'insensitive' } },
+        ],
+      }));
+    }
+
+    // Location filter (City/District)
+    if (query.city) {
+      where.city = { contains: query.city, mode: 'insensitive' };
+    }
+    if (query.district) {
+      where.district = { contains: query.district, mode: 'insensitive' };
     }
 
     // Price range
@@ -119,7 +140,7 @@ export class ListingsService {
       filteredListings = listings
         .map((listing) => ({
           ...listing,
-          distance: listing.lat && listing.lng 
+          distance: listing.lat && listing.lng
             ? this.calculateDistance(lat, lng, listing.lat, listing.lng)
             : null,
         }))
@@ -204,6 +225,29 @@ export class ListingsService {
           },
         },
       },
+    });
+
+    return updated;
+  }
+
+  async toggleHidden(id: string, landlordId: string) {
+    const listing = await this.prisma.listing.findUnique({
+      where: { id },
+    });
+
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    if (listing.landlordId !== landlordId) {
+      throw new ForbiddenException('You can only update your own listings');
+    }
+
+    const newStatus = listing.status === 'AVAILABLE' ? 'UNAVAILABLE' : 'AVAILABLE';
+
+    const updated = await this.prisma.listing.update({
+      where: { id },
+      data: { status: newStatus },
     });
 
     return updated;
@@ -318,9 +362,9 @@ export class ListingsService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(this.toRad(lat1)) *
-        Math.cos(this.toRad(lat2)) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
+      Math.cos(this.toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }

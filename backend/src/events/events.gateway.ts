@@ -3,6 +3,7 @@ import {
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
@@ -14,8 +15,7 @@ import { Logger } from '@nestjs/common';
   },
 })
 export class EventsGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+  implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -78,5 +78,23 @@ export class EventsGateway
   broadcast(event: string, data: any) {
     this.server.emit(event, data);
     this.logger.log(`Broadcasted ${event}`);
+  }
+
+  // Room support for chat
+  @SubscribeMessage('join_conversation')
+  handleJoinConversation(client: Socket, payload: { conversationId: string }) {
+    client.join(payload.conversationId);
+    this.logger.log(`Client ${client.id} joined conversation ${payload.conversationId}`);
+  }
+
+  @SubscribeMessage('leave_conversation')
+  handleLeaveConversation(client: Socket, payload: { conversationId: string }) {
+    client.leave(payload.conversationId);
+    this.logger.log(`Client ${client.id} left conversation ${payload.conversationId}`);
+  }
+
+  emitToRoom(roomId: string, event: string, data: any) {
+    this.server.to(roomId).emit(event, data);
+    this.logger.log(`Emitted ${event} to room ${roomId}`);
   }
 }

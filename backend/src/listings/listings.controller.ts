@@ -24,11 +24,11 @@ import { Role } from '@prisma/client';
 @ApiTags('Listings')
 @Controller('listings')
 export class ListingsController {
-  constructor(private listingsService: ListingsService) {}
+  constructor(private listingsService: ListingsService) { }
 
   @Get()
-  @ApiOperation({ summary: 'Get all listings with filters' })
-  @ApiResponse({ status: 200, description: 'Listings retrieved' })
+  @ApiOperation({ summary: 'Lấy danh sách phòng trọ với bộ lọc' })
+  @ApiResponse({ status: 200, description: 'Lấy danh sách thành công' })
   findAll(@Query() query: QueryListingDto) {
     return this.listingsService.findAll(query);
   }
@@ -37,26 +37,26 @@ export class ListingsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.LANDLORD)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get my listings (landlord only)' })
+  @ApiOperation({ summary: 'Lấy danh sách phòng của tôi (chủ trọ)' })
   getMyListings(@CurrentUser() user: any, @Query() query: QueryListingDto) {
     return this.listingsService.getMyListings(user.id, query);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get listing by ID' })
-  @ApiResponse({ status: 200, description: 'Listing found' })
-  @ApiResponse({ status: 404, description: 'Listing not found' })
+  @ApiOperation({ summary: 'Lấy thông tin chi tiết phòng trọ' })
+  @ApiResponse({ status: 200, description: 'Tìm thấy phòng trọ' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy phòng trọ' })
   findOne(@Param('id') id: string) {
     return this.listingsService.findOne(id);
   }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.LANDLORD)
+  @Roles(Role.LANDLORD, Role.RENTER)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create listing (landlord only)' })
-  @ApiResponse({ status: 201, description: 'Listing created' })
-  @ApiResponse({ status: 403, description: 'Only landlords can create listings' })
+  @ApiOperation({ summary: 'Tạo tin đăng phòng trọ (chủ trọ/người thuê)' })
+  @ApiResponse({ status: 201, description: 'Tạo thành công' })
+  @ApiResponse({ status: 403, description: 'Lỗi phân quyền' })
   create(@CurrentUser() user: any, @Body() dto: CreateListingDto) {
     return this.listingsService.create(user.id, dto);
   }
@@ -65,16 +65,25 @@ export class ListingsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.LANDLORD)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update listing (landlord only)' })
+  @ApiOperation({ summary: 'Cập nhật tin đăng (chủ trọ)' })
   update(@Param('id') id: string, @CurrentUser() user: any, @Body() dto: UpdateListingDto) {
     return this.listingsService.update(id, user.id, dto);
+  }
+
+  @Patch(':id/toggle-hidden')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.LANDLORD)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Ẩn/Hiện tin đăng (chủ trọ)' })
+  toggleHidden(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.listingsService.toggleHidden(id, user.id);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.LANDLORD)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete listing (landlord only)' })
+  @ApiOperation({ summary: 'Xóa tin đăng (chủ trọ)' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
     return this.listingsService.remove(id, user.id);
   }
@@ -83,7 +92,7 @@ export class ListingsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.LANDLORD)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Add photo to listing' })
+  @ApiOperation({ summary: 'Thêm ảnh vào tin đăng' })
   addPhoto(@Param('id') id: string, @CurrentUser() user: any, @Body() dto: AddPhotoDto) {
     return this.listingsService.addPhoto(id, user.id, dto);
   }
@@ -92,7 +101,7 @@ export class ListingsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.LANDLORD)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete photo from listing' })
+  @ApiOperation({ summary: 'Xóa ảnh khỏi tin đăng' })
   removePhoto(@Param('photoId') photoId: string, @CurrentUser() user: any) {
     return this.listingsService.removePhoto(photoId, user.id);
   }

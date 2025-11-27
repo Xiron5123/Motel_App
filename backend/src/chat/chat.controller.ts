@@ -20,7 +20,7 @@ import { SendMessageDto } from './dto/send-message.dto';
 @UseGuards(JwtAuthGuard)
 @Controller('chat')
 export class ChatController {
-  constructor(private chatService: ChatService) {}
+  constructor(private chatService: ChatService) { }
 
   @Post('conversations')
   @ApiOperation({ summary: 'Tạo hoặc lấy conversation với user khác' })
@@ -71,7 +71,7 @@ export class ChatController {
     @GetUser('id') userId: string,
     @Body() dto: SendMessageDto,
   ) {
-    return this.chatService.sendMessage(conversationId, userId, dto.content);
+    return this.chatService.sendMessage(conversationId, userId, dto.content, dto.imageUrl);
   }
 
   @Patch('conversations/:id/read')

@@ -9,6 +9,16 @@ export class QueryListingDto {
   @IsString()
   q?: string;
 
+  @ApiProperty({ required: false, example: 'Hà Nội' })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiProperty({ required: false, example: 'Cầu Giấy' })
+  @IsOptional()
+  @IsString()
+  district?: string;
+
   @ApiProperty({ required: false, example: 1000000 })
   @IsOptional()
   @Type(() => Number)
@@ -67,8 +77,8 @@ export class QueryListingDto {
   @Min(1)
   limit?: number = 10;
 
-  @ApiProperty({ 
-    required: false, 
+  @ApiProperty({
+    required: false,
     example: 'price_asc',
     enum: ['price_asc', 'price_desc', 'distance', 'created_desc', 'created_asc'],
     description: 'Sort order'

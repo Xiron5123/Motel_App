@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class ChatService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventsGateway: EventsGateway,
+  ) { }
 
   // Tạo hoặc lấy conversation giữa 2 users
   async getOrCreateConversation(userId1: string, userId2: string) {
@@ -83,7 +87,7 @@ export class ChatService {
       });
 
       return conversation;
-    } catch (error) {
+    } catch (error: any) {
       // Nếu bị race condition, thử tìm lại
       if (error.code === 'P2002') {
         const retryConversations = await this.prisma.conversation.findMany({
@@ -243,14 +247,15 @@ export class ChatService {
       },
     });
 
-    return messages.reverse(); // Trả về oldest -> newest
+    return messages; // Trả về newest -> oldest (để inverted FlatList hiển thị đúng)
   }
 
   // Gửi message
   async sendMessage(
     conversationId: string,
     senderId: string,
-    content: string,
+    content?: string,
+    imageUrl?: string,
   ) {
     // Verify user is participant
     await this.getConversationById(conversationId, senderId);
@@ -260,6 +265,7 @@ export class ChatService {
         conversationId,
         senderId,
         content,
+        imageUrl,
       },
       include: {
         sender: {
@@ -277,6 +283,9 @@ export class ChatService {
       where: { id: conversationId },
       data: { lastMessageAt: new Date() },
     });
+
+    // Emit real-time event
+    this.eventsGateway.emitToRoom(conversationId, 'new_message', message);
 
     return message;
   }

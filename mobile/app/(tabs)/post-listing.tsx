@@ -1,0 +1,731 @@
+
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import * as ImagePicker from 'expo-image-picker';
+import { Feather } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
+import { useLocationStore } from '../../src/store/locationStore';
+
+import { Typography } from '../../src/components/ui/Typography';
+import { Input } from '../../src/components/ui/Input';
+import { Button } from '../../src/components/ui/Button';
+import { Modal } from '../../src/components/ui/Modal';
+import { theme } from '../../src/theme';
+import api from '../../src/services/api';
+import { useAuthStore } from '../../src/store/authStore';
+import { formatNumber } from '../../src/utils/format';
+import { getImageUrl } from '../../src/utils/image';
+import { toast } from '../../src/store/toastStore';
+
+// Schema for validation
+const listingSchema = z.object({
+    title: z.string().min(5, 'Tiêu đề tối thiểu 5 ký tự'),
+    description: z.string().min(10, 'Mô tả tối thiểu 10 ký tự'),
+    price: z.string().min(1, 'Vui lòng nhập giá'),
+    area: z.string().min(1, 'Vui lòng nhập diện tích'),
+    address: z.string().min(5, 'Vui lòng nhập địa chỉ'),
+    district: z.string().min(2, 'Vui lòng nhập quận/huyện'),
+    ward: z.string().optional(),
+    amenities: z.array(z.string()).optional(),
+});
+
+type ListingForm = z.infer<typeof listingSchema>;
+
+const AMENITIES_LIST = [
+    { id: 'wifi', label: 'Wifi' },
+    { id: 'parking', label: 'Chỗ để xe' },
+    { id: 'kitchen', label: 'Bếp' },
+    { id: 'ac', label: 'Điều hòa' },
+    { id: 'wc_private', label: 'Vệ sinh riêng' },
+    { id: 'wc_shared', label: 'Vệ sinh chung' },
+    { id: 'fridge', label: 'Tủ lạnh' },
+    { id: 'washing_machine', label: 'Máy giặt' },
+    { id: 'bed', label: 'Giường' },
+    { id: 'wardrobe', label: 'Tủ quần áo' },
+    { id: 'pet', label: 'Thú cưng' },
+    { id: 'window', label: 'Cửa sổ' },
+    { id: 'balcony', label: 'Ban công' },
+    { id: 'security', label: 'An ninh' },
+    { id: 'time', label: 'Giờ giấc tự do' },
+];
+
+const FURNITURE_OPTIONS = [
+    { id: 'furniture_full', label: 'Đầy đủ' },
+    { id: 'furniture_basic', label: 'Cơ bản' },
+    { id: 'furniture_empty', label: 'Nhà trống' },
+];
+
+import { PROVINCES } from '../../src/constants/locations';
+
+export default function PostListingScreen() {
+    const router = useRouter();
+    const params = useLocalSearchParams();
+    const { id } = params;
+    const isEditing = !!id;
+
+    const { checkAuth } = useAuthStore();
+    const [images, setImages] = useState<string[]>([]);
+    const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+    const [selectedFurniture, setSelectedFurniture] = useState<string>('');
+    const [selectedCity, setSelectedCity] = useState('Hồ Chí Minh');
+    const [cityModalVisible, setCityModalVisible] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+
+    const { control, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<ListingForm>({
+        resolver: zodResolver(listingSchema),
+        defaultValues: {
+            title: '',
+            description: '',
+            price: '',
+            area: '',
+            address: '',
+            district: '',
+            ward: '',
+        },
+    });
+
+    // Watch fields for auto-title
+    const watchedFields = watch(['address', 'ward', 'district', 'price', 'area']);
+
+    const { pickedLocation, setPickedLocation } = useLocationStore();
+
+    // Handle map return params
+    useEffect(() => {
+        if (pickedLocation) {
+            setCoordinates(pickedLocation);
+        }
+    }, [pickedLocation]);
+
+
+
+    // Fetch listing data if editing
+    useEffect(() => {
+        if (isEditing) {
+            const fetchListing = async () => {
+                try {
+                    setIsLoading(true);
+                    const response = await api.get(`/listings/${id}`);
+                    const listing = response.data;
+
+                    reset({
+                        title: listing.title,
+                        description: listing.description,
+                        price: listing.price.toString(),
+                        area: listing.area.toString(),
+                        address: listing.address,
+                        district: listing.district,
+                        ward: listing.ward || '',
+                    });
+
+                    setSelectedCity(listing.city);
+                    setSelectedAmenities(listing.amenities.filter((a: string) => !a.startsWith('furniture_')));
+                    const furniture = listing.amenities.find((a: string) => a.startsWith('furniture_'));
+                    if (furniture) setSelectedFurniture(furniture);
+
+                    if (listing.lat && listing.lng) {
+                        setCoordinates({ lat: listing.lat, lng: listing.lng });
+                    }
+
+                    if (listing.photos) {
+                        setImages(listing.photos.map((p: any) => getImageUrl(p.url)));
+                    }
+
+                } catch (error) {
+                    console.error('Error fetching listing:', error);
+                    toast.error('Không thể tải thông tin tin đăng');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchListing();
+        }
+    }, [id]);
+
+    // Check auth on mount
+    useEffect(() => {
+        const verifyAuth = async () => {
+            const token = await SecureStore.getItemAsync('accessToken');
+            if (!token) {
+                toast.info('Vui lòng đăng nhập để đăng tin');
+                router.replace('/(auth)/login');
+            }
+        };
+        verifyAuth();
+    }, []);
+
+    const uploadImage = async (uri: string): Promise<string | null> => {
+        try {
+            const fileUri = Platform.OS === 'android' ? uri : uri.replace('file://', '');
+            const formData = new FormData();
+            // @ts-ignore
+            formData.append('file', {
+                uri: fileUri,
+                name: 'listing_photo.jpg',
+                type: 'image/jpeg',
+            });
+
+            const token = await SecureStore.getItemAsync('accessToken');
+            const response = await fetch(`${api.defaults.baseURL}/upload`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (response.status === 401) {
+                throw new Error('Unauthorized');
+            }
+            if (!response.ok) throw new Error('Upload failed');
+
+            const data = await response.json();
+            return data.url;
+        } catch (error: any) {
+            console.error('Upload error:', error);
+            if (error.message === 'Unauthorized') {
+                throw error;
+            }
+            return null;
+        }
+    };
+
+    const pickImage = async () => {
+        if (Platform.OS !== 'web') {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                toast.error('Cần quyền truy cập thư viện ảnh để đăng ảnh.');
+                return;
+            }
+        }
+
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: 'images',
+            quality: 0.8,
+            allowsMultipleSelection: true,
+            selectionLimit: 5 - images.length,
+        });
+
+        if (!result.canceled) {
+            const newImages = result.assets.map(asset => asset.uri);
+            setImages([...images, ...newImages]);
+        }
+    };
+
+    const removeImage = (index: number) => {
+        const newImages = [...images];
+        newImages.splice(index, 1);
+        setImages(newImages);
+    };
+
+    const toggleAmenity = (id: string) => {
+        if (selectedAmenities.includes(id)) {
+            setSelectedAmenities(selectedAmenities.filter(item => item !== id));
+        } else {
+            setSelectedAmenities([...selectedAmenities, id]);
+        }
+    };
+
+    const onSubmit = async (data: ListingForm) => {
+        if (images.length === 0) {
+            toast.error('Vui lòng chọn ít nhất 1 ảnh cho phòng trọ.');
+            return;
+        }
+
+        const token = await SecureStore.getItemAsync('accessToken');
+        if (!token) {
+            toast.error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+            router.replace('/(auth)/login');
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+
+            // Combine amenities and furniture
+            const finalAmenities = [...selectedAmenities];
+            if (selectedFurniture) {
+                finalAmenities.push(selectedFurniture);
+            }
+
+            // 1. Create Listing
+            const listingData = {
+                title: data.title,
+                description: data.description,
+                price: parseFloat(data.price.replace(/,/g, '')),
+                area: parseFloat(data.area),
+                address: data.address,
+                city: selectedCity,
+                district: data.district,
+                ward: data.ward,
+                amenities: finalAmenities,
+                lat: coordinates?.lat || 21.0285,
+                lng: coordinates?.lng || 105.8542,
+            };
+
+            let listingId = id;
+
+            if (isEditing) {
+                await api.patch(`/listings/${id}`, listingData);
+            } else {
+                const response = await api.post('/listings', listingData);
+                listingId = response.data.id;
+            }
+
+            // 2. Upload Photos
+            const newPhotos = images.filter(img => !img.startsWith('http'));
+            const uploadedUrls: string[] = [];
+
+            for (const uri of newPhotos) {
+                const url = await uploadImage(uri);
+                if (url) {
+                    uploadedUrls.push(url);
+                }
+            }
+
+            await Promise.all(uploadedUrls.map((url, index) => {
+                return api.post(`/listings/${listingId}/photos`, {
+                    url: url,
+                    order: index, // This might need adjustment to append correctly
+                });
+            }));
+
+            // 3. Refresh Auth to update Role (if upgraded)
+            await checkAuth();
+
+            toast.success(isEditing ? 'Cập nhật tin thành công!' : 'Đăng tin thành công!');
+
+            if (!isEditing) {
+                reset();
+                setImages([]);
+                setSelectedAmenities([]);
+                setSelectedFurniture('');
+                setCoordinates(null);
+                setPickedLocation(null);
+            }
+            router.replace('/(tabs)');
+
+        } catch (error: any) {
+            console.error('Post listing error:', error);
+            if (error.response?.status === 401 || error.message === 'Unauthorized') {
+                toast.error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+                router.replace('/(auth)/login');
+            } else {
+                toast.error(error.response?.data?.message || 'Đăng tin thất bại');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <SafeAreaView style={styles.container} edges={['top']} >
+            <View style={styles.header}>
+                <Typography variant="h2">{isEditing ? 'Cập Nhật Tin' : 'Đăng Tin Mới'}</Typography>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                {/* Image Picker Section */}
+                <View style={styles.section}>
+                    <Typography variant="h3" style={styles.sectionTitle}>Hình ảnh ({images.length}/5)</Typography>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+                        <TouchableOpacity style={styles.addImageButton} onPress={pickImage} disabled={images.length >= 5}>
+                            <Feather name="camera" size={24} color={theme.colors.textSecondary} />
+                            <Typography variant="caption" style={{ marginTop: 4 }}>Thêm ảnh</Typography>
+                        </TouchableOpacity>
+                        {images.map((uri, index) => (
+                            <View key={index} style={styles.imageContainer}>
+                                <Image source={{ uri }} style={styles.imageThumbnail} />
+                                <TouchableOpacity style={styles.removeImageButton} onPress={() => removeImage(index)}>
+                                    <Feather name="x" size={12} color="white" />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                    </ScrollView>
+                </View>
+
+                {/* Form Fields */}
+                <View style={styles.form}>
+                    <Controller
+                        control={control}
+                        name="title"
+                        render={({ field: { onChange, value } }) => (
+                            <Input
+                                label="Tiêu đề"
+                                placeholder="VD: Phòng trọ giá rẻ quận 10"
+                                value={value}
+                                onChangeText={onChange}
+                                error={errors.title?.message}
+                            />
+                        )}
+                    />
+
+                    <View style={styles.row}>
+                        <View style={styles.col}>
+                            <Controller
+                                control={control}
+                                name="price"
+                                render={({ field: { onChange, value } }) => (
+                                    <Input
+                                        label="Giá (Triệu/tháng)"
+                                        placeholder="3,500,000"
+                                        value={value}
+                                        onChangeText={(text) => onChange(formatNumber(text))}
+                                        keyboardType="numeric"
+                                        error={errors.price?.message}
+                                    />
+                                )}
+                            />
+                        </View>
+                        <View style={styles.colSpacing} />
+                        <View style={styles.col}>
+                            <Controller
+                                control={control}
+                                name="area"
+                                render={({ field: { onChange, value } }) => (
+                                    <Input
+                                        label="Diện tích (m²)"
+                                        placeholder="25"
+                                        value={value}
+                                        onChangeText={onChange}
+                                        keyboardType="numeric"
+                                        error={errors.area?.message}
+                                    />
+                                )}
+                            />
+                        </View>
+                    </View>
+
+                    <View style={styles.section}>
+                        <Typography variant="h3" style={[styles.sectionTitle, { fontSize: 16, marginBottom: 8 }]}>Khu vực</Typography>
+                        <View style={{ gap: 12 }}>
+                            <TouchableOpacity
+                                style={styles.citySelector}
+                                onPress={() => setCityModalVisible(true)}
+                            >
+                                <Typography variant="body">{selectedCity}</Typography>
+                                <Feather name="chevron-down" size={20} color={theme.colors.text} />
+                            </TouchableOpacity>
+
+                            <View style={styles.row}>
+                                <View style={styles.col}>
+                                    <Controller
+                                        control={control}
+                                        name="district"
+                                        render={({ field: { onChange, value } }) => (
+                                            <Input
+                                                label="Quận/Huyện"
+                                                placeholder="Quận 1"
+                                                value={value}
+                                                onChangeText={onChange}
+                                                error={errors.district?.message}
+                                            />
+                                        )}
+                                    />
+                                </View>
+                                <View style={styles.colSpacing} />
+                                <View style={styles.col}>
+                                    <Controller
+                                        control={control}
+                                        name="ward"
+                                        render={({ field: { onChange, value } }) => (
+                                            <Input
+                                                label="Phường/Xã"
+                                                placeholder="Phường Bến Nghé"
+                                                value={value}
+                                                onChangeText={onChange}
+                                                error={errors.ward?.message}
+                                            />
+                                        )}
+                                    />
+                                </View>
+                            </View>
+
+                            <Controller
+                                control={control}
+                                name="address"
+                                render={({ field: { onChange, value } }) => (
+                                    <Input
+                                        label="Địa chỉ chi tiết"
+                                        placeholder="Số nhà, tên đường..."
+                                        value={value}
+                                        onChangeText={onChange}
+                                        error={errors.address?.message}
+                                    />
+                                )}
+                            />
+
+                            <TouchableOpacity
+                                style={styles.mapButton}
+                                onPress={() => router.push({ pathname: '/map' as any, params: { mode: 'pick' } })}
+                            >
+                                <Feather name="map-pin" size={20} color={theme.colors.primary} />
+                                <Typography variant="body" style={styles.mapButtonText}>
+                                    {coordinates ? 'Đã chọn vị trí trên bản đồ' : 'Chọn vị trí trên bản đồ'}
+                                </Typography>
+                                {coordinates && <Feather name="check" size={20} color="green" />}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <Modal
+                        visible={cityModalVisible}
+                        onClose={() => setCityModalVisible(false)}
+                        title="Chọn Tỉnh/Thành phố"
+                    >
+                        <ScrollView style={{ maxHeight: 400 }}>
+                            {PROVINCES.map((province) => (
+                                <TouchableOpacity
+                                    key={province}
+                                    style={[
+                                        styles.provinceItem,
+                                        selectedCity === province && styles.provinceItemSelected
+                                    ]}
+                                    onPress={() => {
+                                        setSelectedCity(province);
+                                        setCityModalVisible(false);
+                                    }}
+                                >
+                                    <Typography variant="body" style={selectedCity === province ? { color: theme.colors.primary, fontWeight: 'bold' } : {}}>
+                                        {province}
+                                    </Typography>
+                                    {selectedCity === province && <Feather name="check" size={20} color={theme.colors.primary} />}
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </Modal>
+
+                    <Controller
+                        control={control}
+                        name="description"
+                        render={({ field: { onChange, value } }) => (
+                            <Input
+                                label="Mô tả chi tiết"
+                                placeholder="Mô tả về phòng, tiện ích xung quanh..."
+                                value={value}
+                                onChangeText={onChange}
+                                multiline
+                                numberOfLines={4}
+                                style={{ height: 100, textAlignVertical: 'top' }}
+                                error={errors.description?.message}
+                            />
+                        )}
+                    />
+
+                    {/* Furniture Section */}
+                    <View style={styles.section}>
+                        <Typography variant="h3" style={styles.sectionTitle}>Nội thất</Typography>
+                        <View style={styles.amenitiesGrid}>
+                            {FURNITURE_OPTIONS.map((item) => {
+                                const isSelected = selectedFurniture === item.id;
+                                return (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        style={[
+                                            styles.amenityChip,
+                                            isSelected && styles.amenityChipSelected
+                                        ]}
+                                        onPress={() => setSelectedFurniture(item.id)}
+                                    >
+                                        <Typography
+                                            variant="caption"
+                                            style={[
+                                                styles.amenityText,
+                                                isSelected && styles.amenityTextSelected
+                                            ]}
+                                        >
+                                            {item.label}
+                                        </Typography>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </View>
+
+                    {/* Amenities Section */}
+                    <View style={styles.section}>
+                        <Typography variant="h3" style={styles.sectionTitle}>Tiện ích</Typography>
+                        <View style={styles.amenitiesGrid}>
+                            {AMENITIES_LIST.map((item) => {
+                                const isSelected = selectedAmenities.includes(item.id);
+                                return (
+                                    <TouchableOpacity
+                                        key={item.id}
+                                        style={[
+                                            styles.amenityChip,
+                                            isSelected && styles.amenityChipSelected
+                                        ]}
+                                        onPress={() => toggleAmenity(item.id)}
+                                    >
+                                        <Typography
+                                            variant="caption"
+                                            style={[
+                                                styles.amenityText,
+                                                isSelected && styles.amenityTextSelected
+                                            ]}
+                                        >
+                                            {item.label}
+                                        </Typography>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </View>
+
+                    <Button
+                        title={isEditing ? "Lưu Thay Đổi" : "Đăng Tin"}
+                        onPress={handleSubmit(onSubmit)}
+                        loading={isLoading}
+                        variant="primary"
+                        style={styles.submitButton}
+                    />
+                </View>
+            </ScrollView>
+        </SafeAreaView >
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    header: {
+        padding: 20,
+        borderBottomWidth: 2,
+        borderBottomColor: theme.colors.border,
+        backgroundColor: theme.colors.background,
+    },
+    scrollContent: {
+        padding: 20,
+        paddingBottom: 40,
+    },
+    section: {
+        marginBottom: 24,
+    },
+    sectionTitle: {
+        marginBottom: 12,
+        fontSize: 18,
+    },
+    imageScroll: {
+        flexDirection: 'row',
+    },
+    addImageButton: {
+        width: 80,
+        height: 80,
+        borderWidth: 2,
+        borderColor: theme.colors.border,
+        borderStyle: 'dashed',
+        borderRadius: theme.borderRadius.md,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+        backgroundColor: theme.colors.card,
+    },
+    imageContainer: {
+        position: 'relative',
+        marginRight: 12,
+    },
+    imageThumbnail: {
+        width: 80,
+        height: 80,
+        borderRadius: theme.borderRadius.md,
+        borderWidth: 2,
+        borderColor: theme.colors.border,
+    },
+    removeImageButton: {
+        position: 'absolute',
+        top: -6,
+        right: -6,
+        backgroundColor: theme.colors.error,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'white',
+    },
+    form: {
+        width: '100%',
+    },
+    row: {
+        flexDirection: 'row',
+    },
+    col: {
+        flex: 1,
+    },
+    colSpacing: {
+        width: 12,
+    },
+    amenitiesGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    amenityChip: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: theme.colors.border,
+        backgroundColor: theme.colors.card,
+    },
+    amenityChipSelected: {
+        backgroundColor: theme.colors.primary,
+        borderColor: 'black',
+    },
+    amenityText: {
+        fontWeight: '600',
+    },
+    amenityTextSelected: {
+        color: theme.colors.text,
+    },
+    submitButton: {
+        marginTop: 24,
+    },
+    citySelector: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 12,
+        borderWidth: 2,
+        borderColor: theme.colors.border,
+        borderRadius: theme.borderRadius.md,
+        backgroundColor: theme.colors.card,
+        marginBottom: 12,
+    },
+    provinceItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    provinceItemSelected: {
+        backgroundColor: '#FFF5F5',
+    },
+    mapButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderWidth: 1,
+        borderColor: theme.colors.primary,
+        borderRadius: theme.borderRadius.md,
+        backgroundColor: '#F0F9FF',
+        marginBottom: 24,
+        gap: 8,
+    },
+    mapButtonText: {
+        color: theme.colors.primary,
+        fontWeight: '600',
+        flex: 1,
+    },
+});

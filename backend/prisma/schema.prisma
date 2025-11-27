@@ -25,9 +25,48 @@ model User {
   messages        Message[]
   notifications   Notification[]
   refreshTokens   RefreshToken[]
+  roommateProfile RoommateProfile?
+  passwordResetTokens PasswordResetToken[]
 
   @@index([email])
   @@index([phone])
+}
+
+model RoommateProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  name      String
+  age       Int
+  gender    Gender
+  job       String
+  budgetMin Float
+  budgetMax Float
+  location  String
+  intro     String?
+  avatar    String?
+  habits    String[]
+  occupation Occupation @default(OTHER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([location])
+  @@index([budgetMin])
+  @@index([budgetMax])
+  @@index([occupation])
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  ALL
+}
+
+enum Occupation {
+  STUDENT
+  WORKER
+  OTHER
 }
 
 model Listing {
@@ -39,6 +78,9 @@ model Listing {
   deposit         Float?
   area            Float
   address         String
+  city            String
+  district        String
+  ward            String?
   lat             Float?
   lng             Float?
   amenities       String[]
@@ -177,4 +219,29 @@ enum BookingStatus {
   ACCEPTED
   REJECTED
   CANCELLED
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model EmailVerificationOTP {
+  id        String   @id @default(cuid())
+  email     String
+  otp       String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  verified  Boolean  @default(false)
+
+  @@index([email])
+  @@index([expiresAt])
 }

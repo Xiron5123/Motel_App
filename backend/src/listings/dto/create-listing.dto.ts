@@ -44,6 +44,21 @@ export class CreateListingDto {
   @IsNotEmpty()
   address: string;
 
+  @ApiProperty({ example: 'Hà Nội' })
+  @IsString()
+  @IsNotEmpty()
+  city: string;
+
+  @ApiProperty({ example: 'Hai Bà Trưng' })
+  @IsString()
+  @IsNotEmpty()
+  district: string;
+
+  @ApiProperty({ example: 'Phường Bách Khoa', required: false })
+  @IsString()
+  @IsOptional()
+  ward?: string;
+
   @ApiProperty({ example: 21.0031177, required: false })
   @IsNumber()
   @IsOptional()
