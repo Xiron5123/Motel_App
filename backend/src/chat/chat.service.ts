@@ -10,7 +10,7 @@ export class ChatService {
   ) { }
 
   // Tạo hoặc lấy conversation giữa 2 users
-  async getOrCreateConversation(userId1: string, userId2: string) {
+  async getOrCreateConversation(userId1: string, userId2: string, listingId?: string) {
     // Tìm conversation đã tồn tại với đúng 2 users này
     const conversations = await this.prisma.conversation.findMany({
       where: {
@@ -165,6 +165,17 @@ export class ChatService {
                 avatar: true,
               },
             },
+            listing: {
+              select: {
+                id: true,
+                title: true,
+                price: true,
+                photos: {
+                  take: 1,
+                  select: { url: true },
+                },
+              },
+            },
           },
         },
       },
@@ -173,14 +184,34 @@ export class ChatService {
       },
     });
 
-    // Format response với last message
+    // Get unread counts for all conversations at once (avoid N+1 query)
+    const conversationIds = conversations.map((c) => c.id);
+
+    const unreadCounts = await this.prisma.message.groupBy({
+      by: ['conversationId'],
+      where: {
+        conversationId: { in: conversationIds },
+        senderId: { not: userId }, // Không tính tin nhắn của chính mình
+        readAt: null, // Chưa đọc
+      },
+      _count: {
+        id: true,
+      },
+    });
+
+    // Create a map for quick lookup
+    const unreadCountMap = new Map(
+      unreadCounts.map((item) => [item.conversationId, item._count.id]),
+    );
+
+    // Format response với last message và unread count
     return conversations.map((conv) => ({
       id: conv.id,
       lastMessageAt: conv.lastMessageAt,
       createdAt: conv.createdAt,
       participants: conv.participants.map((p) => p.user),
       lastMessage: conv.messages[0] || null,
-      unreadCount: 0, // TODO: implement unread count
+      unreadCount: unreadCountMap.get(conv.id) || 0,
     }));
   }
 
@@ -244,6 +275,18 @@ export class ChatService {
             avatar: true,
           },
         },
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            price: true,
+            address: true,
+            photos: {
+              take: 1,
+              select: { url: true },
+            },
+          },
+        },
       },
     });
 
@@ -256,6 +299,7 @@ export class ChatService {
     senderId: string,
     content?: string,
     imageUrl?: string,
+    listingId?: string,
   ) {
     // Verify user is participant
     await this.getConversationById(conversationId, senderId);
@@ -266,6 +310,7 @@ export class ChatService {
         senderId,
         content,
         imageUrl,
+        listingId,
       },
       include: {
         sender: {
@@ -294,7 +339,27 @@ export class ChatService {
   async markAsRead(conversationId: string, userId: string) {
     await this.getConversationById(conversationId, userId);
 
-    // TODO: implement read receipts
-    return { message: 'Marked as read' };
+    // Update all unread messages in this conversation
+    const result = await this.prisma.message.updateMany({
+      where: {
+        conversationId,
+        senderId: { not: userId }, // Chỉ mark messages của người khác
+        readAt: null, // Chưa đọc
+      },
+      data: {
+        readAt: new Date(),
+      },
+    });
+
+    // Emit real-time event if any messages were updated
+    if (result.count > 0) {
+      this.eventsGateway.emitToRoom(conversationId, 'messages_read', {
+        conversationId,
+        userId,
+        count: result.count,
+      });
+    }
+
+    return { message: 'Marked as read', count: result.count };
   }
 }

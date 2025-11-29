@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Modal } from 'react-native';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -23,6 +23,14 @@ interface Message {
     id: string;
     content: string;
     imageUrl?: string;
+    listingId?: string;
+    listing?: {
+        id: string;
+        title: string;
+        price: number;
+        address: string;
+        photos?: { url: string }[];
+    };
     senderId: string;
     conversationId: string;
     sentAt: string;
@@ -99,6 +107,21 @@ export default function ChatDetailScreen() {
             socketService.emit('leave_conversation', { conversationId: id });
         };
     }, [id, user?.id]);
+
+    // Mark messages as read when screen is focused
+    useFocusEffect(
+        React.useCallback(() => {
+            if (id && user?.id) {
+                api.patch(`/chat/conversations/${id}/read`)
+                    .then(() => {
+                        // Invalidate both queries to update badge everywhere
+                        queryClient.invalidateQueries({ queryKey: ['unread-count'] });
+                        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+                    })
+                    .catch(err => console.error('Failed to mark as read:', err));
+            }
+        }, [id, user?.id, queryClient])
+    );
 
     const handleInputChange = (text: string) => {
         setInputText(text);
@@ -233,6 +256,31 @@ export default function ChatDetailScreen() {
                     styles.bubble,
                     isMe ? styles.myBubble : styles.theirBubble
                 ]}>
+                    {/* Listing Card */}
+                    {item.listing && (
+                        <TouchableOpacity
+                            style={styles.listingCard}
+                            onPress={() => router.push(`/listing/${item.listing!.id}`)}
+                            activeOpacity={0.8}
+                        >
+                            {item.listing.photos?.[0] && (
+                                <Image
+                                    source={{ uri: getImageUrl(item.listing.photos[0].url) }}
+                                    style={styles.listingCardImage}
+                                    contentFit="cover"
+                                />
+                            )}
+                            <View style={styles.listingCardContent}>
+                                <Typography variant="body" numberOfLines={2} style={styles.listingCardTitle}>
+                                    {item.listing.title}
+                                </Typography>
+                                <Typography variant="caption" style={styles.listingCardPrice}>
+                                    {(item.listing.price / 1000000).toFixed(1)} triệu/tháng
+                                </Typography>
+                            </View>
+                        </TouchableOpacity>
+                    )}
+
                     {item.imageUrl && (
                         <TouchableOpacity onPress={() => setSelectedImage(getImageUrl(item.imageUrl))}>
                             <Image
@@ -525,6 +573,33 @@ const styles = StyleSheet.create({
         height: 200,
         borderRadius: 8,
         marginBottom: 8,
+    },
+    listingCard: {
+        flexDirection: 'row',
+        backgroundColor: 'white',
+        borderRadius: 8,
+        overflow: 'hidden',
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    listingCardImage: {
+        width: 80,
+        height: 80,
+    },
+    listingCardContent: {
+        flex: 1,
+        padding: 8,
+        justifyContent: 'center',
+    },
+    listingCardTitle: {
+        fontWeight: '600',
+        marginBottom: 4,
+        color: '#000',
+    },
+    listingCardPrice: {
+        color: theme.colors.primary,
+        fontWeight: '700',
     },
     sendButtonDisabled: {
         backgroundColor: '#E0E0E0',

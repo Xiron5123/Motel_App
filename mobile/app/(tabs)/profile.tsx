@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Typography } from '../../src/components/ui/Typography';
 import { Button } from '../../src/components/ui/Button';
 import { Card } from '../../src/components/ui/Card';
+import { LogoutConfirmModal } from '../../src/components/modals/LogoutConfirmModal';
 import { theme } from '../../src/theme';
 import { useAuthStore } from '../../src/store/authStore';
 import { useNotificationStore } from '../../src/store/notificationStore';
@@ -16,20 +17,19 @@ export default function ProfileScreen() {
     const router = useRouter();
     const { user, logout } = useAuthStore();
     const { unreadCount, fetchNotifications } = useNotificationStore();
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     React.useEffect(() => {
         fetchNotifications();
     }, []);
 
     const handleLogout = () => {
-        Alert.alert(
-            'Đăng xuất',
-            'Bạn có chắc chắn muốn đăng xuất?',
-            [
-                { text: 'Hủy', style: 'cancel' },
-                { text: 'Đăng xuất', style: 'destructive', onPress: logout }
-            ]
-        );
+        setShowLogoutModal(true);
+    };
+
+    const confirmLogout = () => {
+        setShowLogoutModal(false);
+        logout();
     };
 
     const MenuItem = ({ icon, label, onPress, color = theme.colors.text, badge }: { icon: keyof typeof Feather.glyphMap, label: string, onPress?: () => void, color?: string, badge?: number }) => (
@@ -91,6 +91,18 @@ export default function ProfileScreen() {
                             label="Đã lưu"
                             onPress={() => router.push('/favorites')}
                         />
+                        <MenuItem
+                            icon="message-circle"
+                            label="Phòng đã đặt"
+                            onPress={() => router.push('/my-bookings')}
+                        />
+                        {user?.role === 'LANDLORD' && (
+                            <MenuItem
+                                icon="inbox"
+                                label="Yêu cầu thuê phòng"
+                                onPress={() => router.push('/landlord-bookings' as any)}
+                            />
+                        )}
                         {user?.role === 'RENTER' && (
                             <MenuItem
                                 icon="users"
@@ -123,6 +135,13 @@ export default function ProfileScreen() {
                     icon={<Feather name="log-out" size={20} color={theme.colors.error} />}
                 />
             </ScrollView>
+
+            {/* Logout Confirm Modal */}
+            <LogoutConfirmModal
+                visible={showLogoutModal}
+                onConfirm={confirmLogout}
+                onCancel={() => setShowLogoutModal(false)}
+            />
         </SafeAreaView>
     );
 }

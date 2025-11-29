@@ -20,6 +20,7 @@ import { Typography } from '../../src/components/ui/Typography';
 import { Button } from '../../src/components/ui/Button';
 import { BackButton } from '../../src/components/ui/BackButton';
 import { Card } from '../../src/components/ui/Card';
+import { BookingMessageModal } from '../../src/components/modals/BookingMessageModal';
 import { theme } from '../../src/theme';
 import { useAuthStore } from '../../src/store/authStore';
 import { toast } from '../../src/store/toastStore';
@@ -37,6 +38,7 @@ export default function ListingDetailScreen() {
     const [imageModalVisible, setImageModalVisible] = useState(false);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [showBookingModal, setShowBookingModal] = useState(false);
     const insets = useSafeAreaInsets();
 
     const { data: listing, isLoading } = useQuery({
@@ -312,7 +314,10 @@ export default function ListingDetailScreen() {
                                                 toast.error('Không tìm thấy thông tin chủ trọ');
                                                 return;
                                             }
-                                            const response = await api.post('/chat/conversations', { participantId: landlordId });
+                                            const response = await api.post('/chat/conversations', {
+                                                participantId: landlordId,
+                                                listingId: listing.id,
+                                            });
                                             router.push(`/chat/${response.data.id}`);
                                         } catch (error: any) {
                                             console.error('Start chat error details:', error.response?.data || error.message);
@@ -353,10 +358,56 @@ export default function ListingDetailScreen() {
             <View style={styles.footer}>
                 <Button
                     title="Đặt phòng ngay"
-                    onPress={() => { }}
+                    onPress={() => {
+                        if (!user) {
+                            toast.info('Vui lòng đăng nhập để đặt phòng');
+                            router.push('/(auth)/login');
+                            return;
+                        }
+                        if (String(user?.id) === String(listing.landlord?.id)) {
+                            toast.info('Đây là tin đăng của bạn');
+                            return;
+                        }
+                        setShowBookingModal(true);
+                    }}
                     style={styles.bookButton}
                 />
             </View>
+
+            {/* Booking Message Modal */}
+            <BookingMessageModal
+                visible={showBookingModal}
+                listing={listing}
+                onClose={() => setShowBookingModal(false)}
+                onSend={async (message) => {
+                    try {
+                        const landlordId = listing.landlord?.id;
+                        if (!landlordId) {
+                            toast.error('Không tìm thấy thông tin chủ trọ');
+                            return;
+                        }
+
+                        const convResponse = await api.post('/chat/conversations', {
+                            participantId: landlordId,
+                            listingId: listing.id,
+                        });
+                        const conversationId = convResponse.data.id;
+
+                        await api.post(`/chat/conversations/${conversationId}/messages`, {
+                            content: message,
+                            listingId: listing.id,
+                        });
+
+                        toast.success('Đã gửi tin nhắn!');
+                        setShowBookingModal(false);
+                        router.push(`/chat/${conversationId}`);
+                    } catch (error: any) {
+                        console.error('Booking error:', error);
+                        toast.error(error.response?.data?.message || 'Không thể gửi tin nhắn');
+                        throw error;
+                    }
+                }}
+            />
 
             {/* Full Screen Image Modal */}
             <Modal

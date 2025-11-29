@@ -27,6 +27,7 @@ model User {
   refreshTokens   RefreshToken[]
   roommateProfile RoommateProfile?
   passwordResetTokens PasswordResetToken[]
+  pushTokens      PushToken[]
 
   @@index([email])
   @@index([phone])
@@ -91,6 +92,7 @@ model Listing {
   favorites       Favorite[]
   landlord        User             @relation(fields: [landlordId], references: [id], onDelete: Cascade)
   photos          Photo[]
+  messages        Message[]
 
   @@index([landlordId])
   @@index([status])
@@ -154,14 +156,17 @@ model Message {
   senderId       String
   content        String?
   imageUrl       String?
+  listingId      String?
   sentAt         DateTime     @default(now())
   readAt         DateTime?
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  listing        Listing?     @relation(fields: [listingId], references: [id], onDelete: SetNull)
 
   @@index([conversationId])
   @@index([senderId])
   @@index([sentAt])
+  @@index([listingId])
 }
 
 model Favorite {
@@ -176,18 +181,38 @@ model Favorite {
   @@index([listingId])
 }
 
+enum NotificationType {
+  MESSAGE
+  BOOKING
+  SYSTEM
+}
+
 model Notification {
-  id        String    @id @default(cuid())
+  id        String           @id @default(cuid())
   userId    String
-  type      String
-  data      Json
-  readAt    DateTime?
-  createdAt DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([readAt])
+  @@index([isRead])
   @@index([createdAt])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
 }
 
 model RefreshToken {

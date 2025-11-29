@@ -5,10 +5,10 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { BookingStatus, Role } from '@prisma/client';
+import { BookingStatus, Role, NotificationType } from '@prisma/client';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
-import { NotificationsService, NotificationType } from '../notifications/notifications.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class BookingsService {
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
     private eventsGateway: EventsGateway,
-  ) {}
+  ) { }
 
   // Tạo booking request (RENTER only)
   async createBooking(renterId: string, dto: CreateBookingDto) {
@@ -91,7 +91,7 @@ export class BookingsService {
     // Gửi notification cho landlord
     await this.notificationsService.createNotification(
       booking.listing.landlord.id,
-      NotificationType.BOOKING_CREATED,
+      NotificationType.BOOKING,
       {
         bookingId: booking.id,
         listingId: booking.listingId,
@@ -125,15 +125,15 @@ export class BookingsService {
     const where =
       userRole === Role.LANDLORD
         ? {
-            // Landlord xem bookings cho listings của mình
-            listing: {
-              landlordId: userId,
-            },
-          }
+          // Landlord xem bookings cho listings của mình
+          listing: {
+            landlordId: userId,
+          },
+        }
         : {
-            // Renter xem bookings mình đã tạo
-            renterId: userId,
-          };
+          // Renter xem bookings mình đã tạo
+          renterId: userId,
+        };
 
     return this.prisma.bookingRequest.findMany({
       where,
@@ -343,19 +343,19 @@ export class BookingsService {
     switch (booking.status) {
       case BookingStatus.ACCEPTED:
         recipientId = booking.renterId;
-        notificationType = NotificationType.BOOKING_ACCEPTED;
+        notificationType = NotificationType.BOOKING;
         message = `Đơn đặt phòng "${booking.listing.title}" đã được chấp nhận`;
         eventName = 'booking_accepted';
         break;
       case BookingStatus.REJECTED:
         recipientId = booking.renterId;
-        notificationType = NotificationType.BOOKING_REJECTED;
+        notificationType = NotificationType.BOOKING;
         message = `Đơn đặt phòng "${booking.listing.title}" đã bị từ chối`;
         eventName = 'booking_rejected';
         break;
       case BookingStatus.CANCELLED:
         recipientId = booking.listing.landlordId;
-        notificationType = NotificationType.BOOKING_CANCELLED;
+        notificationType = NotificationType.BOOKING;
         message = `${booking.renter.name} đã hủy đơn đặt phòng "${booking.listing.title}"`;
         eventName = 'booking_cancelled';
         break;

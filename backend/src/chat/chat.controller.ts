@@ -28,13 +28,19 @@ export class ChatController {
     @GetUser('id') userId: string,
     @Body() dto: CreateConversationDto,
   ) {
-    return this.chatService.getOrCreateConversation(userId, dto.participantId);
+    return this.chatService.getOrCreateConversation(userId, dto.participantId, dto.listingId);
   }
 
   @Get('conversations')
   @ApiOperation({ summary: 'Lấy danh sách conversations' })
   getConversations(@GetUser('id') userId: string) {
     return this.chatService.getConversations(userId);
+  }
+
+  @Get('landlord/bookings')
+  @ApiOperation({ summary: 'Lấy danh sách yêu cầu thuê phòng (cho landlord)' })
+  getLandlordBookings(@GetUser('id') landlordId: string) {
+    return this.chatService.getConversations(landlordId);
   }
 
   @Get('conversations/:id')
@@ -71,7 +77,7 @@ export class ChatController {
     @GetUser('id') userId: string,
     @Body() dto: SendMessageDto,
   ) {
-    return this.chatService.sendMessage(conversationId, userId, dto.content, dto.imageUrl);
+    return this.chatService.sendMessage(conversationId, userId, dto.content, dto.imageUrl, dto.listingId);
   }
 
   @Patch('conversations/:id/read')

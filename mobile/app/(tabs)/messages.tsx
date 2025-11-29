@@ -55,10 +55,25 @@ export default function MessagesScreen() {
             });
         };
 
+        const handleMessagesRead = (data: { conversationId: string }) => {
+            // Update cache optimistically to clear badge
+            queryClient.setQueryData(['conversations'], (oldData: any[]) => {
+                if (!oldData) return oldData;
+
+                return oldData.map(conv =>
+                    conv.id === data.conversationId
+                        ? { ...conv, unreadCount: 0 }
+                        : conv
+                );
+            });
+        };
+
         socketService.on('new_message', handleNewMessage);
+        socketService.on('messages_read', handleMessagesRead);
 
         return () => {
             socketService.off('new_message');
+            socketService.off('messages_read');
         };
     }, [queryClient, user, refetch]);
 

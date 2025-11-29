@@ -1,11 +1,12 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
+  Delete,
+  Body,
   Param,
   UseGuards,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
@@ -17,33 +18,43 @@ import { GetUser } from '../auth/decorators/get-user.decorator';
 @UseGuards(JwtAuthGuard)
 @Controller('notifications')
 export class NotificationsController {
-  constructor(private notificationsService: NotificationsService) {}
+  constructor(private notificationsService: NotificationsService) { }
+
+  @Post('token')
+  @ApiOperation({ summary: 'Đăng ký push token' })
+  registerPushToken(
+    @GetUser('id') userId: string,
+    @Body('token') token: string,
+  ) {
+    return this.notificationsService.registerPushToken(userId, token);
+  }
+
+  @Delete('token')
+  @ApiOperation({ summary: 'Hủy đăng ký push token' })
+  unregisterPushToken(@Body('token') token: string) {
+    return this.notificationsService.unregisterPushToken(token);
+  }
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách thông báo' })
+  @ApiOperation({ summary: 'Lấy danh sách notifications' })
   getNotifications(@GetUser('id') userId: string) {
     return this.notificationsService.getNotifications(userId);
   }
 
   @Get('unread-count')
-  @ApiOperation({ summary: 'Lấy số lượng thông báo chưa đọc' })
+  @ApiOperation({ summary: 'Lấy số lượng notifications chưa đọc' })
   getUnreadCount(@GetUser('id') userId: string) {
     return this.notificationsService.getUnreadCount(userId);
   }
 
   @Patch(':id/read')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Đánh dấu thông báo đã đọc' })
-  markAsRead(
-    @Param('id') notificationId: string,
-    @GetUser('id') userId: string,
-  ) {
-    return this.notificationsService.markAsRead(notificationId, userId);
+  @ApiOperation({ summary: 'Đánh dấu notification đã đọc' })
+  markAsRead(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.notificationsService.markAsRead(id, userId);
   }
 
   @Patch('read-all')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Đánh dấu tất cả đã đọc' })
+  @ApiOperation({ summary: 'Đánh dấu tất cả notifications đã đọc' })
   markAllAsRead(@GetUser('id') userId: string) {
     return this.notificationsService.markAllAsRead(userId);
   }

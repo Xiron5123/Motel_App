@@ -1,556 +1,275 @@
-# 🏠 Motel App - Ứng Dụng Tìm Trọ & Kết Nối Người Thuê
+# 🏠 Motel App
 
-> **Version:** 0.5.0  
-> **Tech Stack:** NestJS + PostgreSQL + Prisma + React Native + Expo
+> **Ứng dụng tìm trọ và kết nối người thuê toàn diện**  
+> Version 0.5.0 | NestJS + PostgreSQL + React Native + Expo
 
-Một ứng dụng di động toàn diện cho phép người dùng tìm kiếm phòng trọ, kết nối với chủ trọ, và tìm kiếm bạn cùng phòng tương thích. Hệ thống bao gồm backend API mạnh mẽ và ứng dụng mobile với giao diện hiện đại.
-
----
-
-## 📑 Mục Lục
-
-- [Tính Năng Chính](#-tính-năng-chính)
-- [Kiến Trúc Hệ Thống](#️-kiến-trúc-hệ-thống)
-- [Công Nghệ Sử Dụng](#-công-nghệ-sử-dụng)
-- [Cài Đặt & Chạy Dự Án](#-cài-đặt--chạy-dự-án)
-- [Cấu Trúc Thư Mục](#-cấu-trúc-thư-mục)
-- [API Documentation](#-api-documentation)
-- [Cơ Sở Dữ Liệu](#️-cơ-sở-dữ-liệu)
-- [Screenshots](#-screenshots)
-- [Roadmap](#-roadmap)
-- [Đóng Góp](#-đóng-góp)
-- [License](#-license)
+[![NestJS](https://img.shields.io/badge/NestJS-11.x-E0234E?logo=nestjs)](https://nestjs.com/)
+[![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?logo=react)](https://reactnative.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql)](https://www.postgresql.org/)
+[![Expo](https://img.shields.io/badge/Expo-~54.0-000020?logo=expo)](https://expo.dev/)
 
 ---
 
-## ✨ Tính Năng Chính
+## 📋 Tính Năng Chính
 
-### 👤 Người Dùng (Renter)
+### 🔐 Xác Thực & Người Dùng
 
-- ✅ Đăng ký/Đăng nhập với JWT Authentication
-- ✅ Xem và tìm kiếm phòng trọ theo nhiều tiêu chí
-- ✅ Lọc theo giá, diện tích, tiện nghi
-- ✅ Tìm kiếm theo khoảng cách địa lý
-- ✅ Lưu danh sách yêu thích
-- ✅ Gửi yêu cầu đặt phòng
-- ✅ Chat realtime với chủ trọ
-- ✅ Tạo hồ sơ tìm bạn cùng phòng
-- ✅ Nhận thông báo realtime
+- Đăng ký/Đăng nhập với JWT + Refresh Token
+- Phân quyền: Renter & Landlord
+- Quản lý profile & avatar
 
-### 🏘️ Chủ Trọ (Landlord)
+### 🏘️ Quản Lý Phòng Trọ
 
-- ✅ Nâng cấp từ tài khoản Renter
-- ✅ Đăng tin cho thuê phòng trọ
-- ✅ Quản lý danh sách phòng trọ
-- ✅ Upload và quản lý hình ảnh
-- ✅ Quản lý yêu cầu đặt phòng
-- ✅ Chat với người thuê
-- ✅ Cập nhật trạng thái phòng
+- Đăng tin & quản lý listings (Landlord)
+- Tìm kiếm, lọc theo giá, diện tích, tiện nghi
+- Upload nhiều ảnh cho mỗi phòng
+- Lưu danh sách yêu thích
+- Yêu cầu đặt phòng
+
+### 💬 Chat Realtime
+
+- Nhắn tin 1-1 với Socket.IO
+- Gửi template tin nhắn khi đặt phòng
+- Hiển thị listing card trong chat
+- Typing indicator & message status
+- Thông báo realtime
 
 ### 🤝 Tìm Bạn Cùng Phòng
 
-- ✅ Tạo hồ sơ cá nhân
-- ✅ Tìm kiếm theo ngân sách, khu vực
-- ✅ Lọc theo nghề nghiệp, sở thích
-- ✅ Kết nối và chat trực tiếp
+- Tạo hồ sơ tìm bạn
+- Lọc theo ngân sách, khu vực, sở thích
+- Kết nối trực tiếp qua chat
 
 ---
 
-## 🏗️ Kiến Trúc Hệ Thống
+## 🛠 Tech Stack
 
-```mermaid
-graph TB
-    subgraph "Mobile App"
-        A[React Native + Expo]
-        B[React Query]
-        C[Socket.IO Client]
-    end
-    
-    subgraph "Backend API"
-        D[NestJS Server]
-        E[REST API]
-        F[WebSocket Gateway]
-    end
-    
-    subgraph "Database"
-        G[(PostgreSQL)]
-        H[Prisma ORM]
-    end
-    
-    A -->|HTTP Requests| E
-    A -->|WebSocket| F
-    B -->|State Management| A
-    C -->|Real-time Chat| F
-    E -->|Query/Mutation| H
-    F -->|Query/Mutation| H
-    H -->|SQL| G
-```
+**Backend:**
 
-**Monorepo Structure:**
+- NestJS 11.x | PostgreSQL 15 | Prisma ORM 6.x
+- Socket.IO 4.x | JWT Authentication | Bcrypt
+- Swagger API Documentation
 
-- `backend/` - NestJS API với Prisma ORM
-- `mobile/` - React Native/Expo mobile app
+**Mobile:**
+
+- React Native 0.81 | Expo ~54.0 | Expo Router ~6.0
+- React Query 5.x | Zustand 5.x | Socket.IO Client
+- React Hook Form + Zod Validation
+
+**DevOps:**
+
+- pnpm Workspace (Monorepo) | Docker Compose | Git
 
 ---
 
-## 🛠 Công Nghệ Sử Dụng
+## 🚀 Quick Start
 
-### Backend
+### Prerequisites
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **NestJS** | 11.x | Framework backend TypeScript |
-| **PostgreSQL** | 15 | Main database |
-| **Prisma** | 6.x | ORM và database migrations |
-| **Socket.IO** | 4.x | Real-time communication |
-| **JWT** | - | Authentication & authorization |
-| **Bcrypt** | 6.x | Password hashing |
-| **Swagger** | 11.x | API documentation |
-| **class-validator** | 0.14.x | DTO validation |
+- Node.js >= 18.x
+- pnpm >= 8.x
+- Docker & Docker Compose
+- Expo Go app (mobile testing)
 
-### Mobile
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **React Native** | 0.81.x | Mobile framework |
-| **Expo** | ~54.0 | Development platform |
-| **Expo Router** | ~6.0 | File-based routing |
-| **React Query** | 5.x | Server state management |
-| **Zustand** | 5.x | Client state management |
-| **Socket.IO Client** | 4.x | Real-time messaging |
-| **Axios** | 1.x | HTTP client |
-| **React Hook Form** | 7.x | Form management |
-| **Zod** | 4.x | Schema validation |
-
-### DevOps & Tools
-
-- **pnpm** - Monorepo package manager
-- **Docker Compose** - Local PostgreSQL setup
-- **Git** - Version control
-- **ESLint + Prettier** - Code quality
-
----
-
-## 🚀 Cài Đặt & Chạy Dự Án
-
-### Yêu Cầu Hệ Thống
-
-- **Node.js** >= 18.x
-- **pnpm** >= 8.x
-- **Docker** & **Docker Compose** (cho database)
-- **Expo Go** app (cho mobile testing)
-
-### 1. Clone Repository
+### 1. Clone & Install
 
 ```bash
 git clone https://github.com/Xiron5123/Motel_App.git
 cd Motel_App
-```
-
-### 2. Cài Đặt Dependencies
-
-```bash
 pnpm install
 ```
 
-### 3. Setup Backend
-
-#### a. Khởi động PostgreSQL với Docker
+### 2. Backend Setup
 
 ```bash
 cd backend
+
+# Start PostgreSQL
 docker-compose up -d
-```
 
-#### b. Cấu hình Environment Variables
-
-Tạo file `.env` trong thư mục `backend/`:
-
-```bash
+# Configure .env
 cp .env.example .env
-```
+# Edit DATABASE_URL, JWT_SECRET, etc.
 
-Cập nhật các biến môi trường:
-
-```env
-# Database
-DATABASE_URL="postgresql://postgres:password@localhost:5432/motel_db"
-
-# JWT Secrets
-JWT_SECRET=your-super-secret-jwt-key-change-this
-JWT_EXPIRES_IN=15m
-REFRESH_TOKEN_SECRET=your-refresh-token-secret-change-this
-REFRESH_TOKEN_EXPIRES_IN=7d
-
-# Server
-PORT=3000
-NODE_ENV=development
-
-# Email (Optional - cho forgot password)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-SMTP_FROM=noreply@motelapp.com
-```
-
-#### c. Chạy Migrations
-
-```bash
+# Run migrations
 npx prisma migrate dev
-npx prisma db seed  # Tạo dữ liệu mẫu (optional)
-```
+npx prisma db seed  # Optional: seed data
 
-#### d. Khởi động Backend Server
-
-```bash
+# Start server
 pnpm run start:dev
 ```
 
-Backend sẽ chạy tại: `http://localhost:3000`  
-Swagger API Docs: `http://localhost:3000/api/docs`
+✅ Backend: `http://localhost:3000`  
+📚 Swagger: `http://localhost:3000/api/docs`
 
-### 4. Setup Mobile App
-
-#### a. Cấu hình API URL
-
-Cập nhật file `mobile/src/config/api.config.ts`:
-
-```typescript
-// Đối với development trên thiết bị thật
-export const API_BASE_URL = 'http://YOUR_LOCAL_IP:3000';
-// Ví dụ: 'http://192.168.1.100:3000'
-```
-
-#### b. Khởi động Expo Dev Server
+### 3. Mobile Setup
 
 ```bash
 cd mobile
+
+# Configure API URL in src/services/api.ts
+# Update to your local IP: http://192.168.x.x:3000
+
+# Start Expo
 pnpm start
 ```
 
-#### c. Chạy trên Thiết Bị
-
-- Cài **Expo Go** từ App Store/Play Store
-- Quét QR code từ terminal
-- Hoặc nhấn `a` cho Android emulator, `i` cho iOS simulator
+Scan QR code with **Expo Go** app or press `a`/`i` for emulator.
 
 ---
 
-## 📁 Cấu Trúc Thư Mục
+## 📁 Project Structure
 
 ```
 Motel/
-├── backend/                    # NestJS Backend API
-│   ├── prisma/
-│   │   ├── schema.prisma      # Database schema
-│   │   ├── migrations/        # Database migrations
-│   │   └── seed.ts           # Seed data
+├── backend/              # NestJS API
+│   ├── prisma/          # Schema & migrations
 │   ├── src/
-│   │   ├── auth/             # Authentication module
-│   │   ├── users/            # User management
-│   │   ├── listings/         # Listing CRUD
-│   │   ├── favorites/        # Favorites management
-│   │   ├── bookings/         # Booking requests
-│   │   ├── chat/             # Chat & messaging
-│   │   ├── roommates/        # Roommate profiles
-│   │   ├── notifications/    # Push notifications
-│   │   ├── upload/           # File upload
-│   │   ├── events/           # WebSocket events
-│   │   ├── common/           # Guards, filters, decorators
-│   │   ├── prisma/           # Prisma service
-│   │   └── main.ts           # Application entry
-│   ├── docker-compose.yml    # PostgreSQL setup
-│   ├── .env.example          # Environment template
-│   └── package.json
+│   │   ├── auth/        # Authentication
+│   │   ├── users/       # User management
+│   │   ├── listings/    # Listings CRUD
+│   │   ├── chat/        # Real-time chat
+│   │   ├── roommates/   # Roommate matching
+│   │   └── ...
+│   └── docker-compose.yml
 │
-├── mobile/                    # React Native/Expo App
-│   ├── app/                  # Expo Router (file-based routing)
-│   │   ├── (auth)/          # Auth screens
-│   │   ├── (tabs)/          # Main tab screens
-│   │   └── _layout.tsx      # Root layout
+├── mobile/              # React Native App
+│   ├── app/            # Expo Router (file-based)
+│   │   ├── (auth)/     # Login, Register
+│   │   ├── (tabs)/     # Main tabs
+│   │   └── chat/       # Chat screens
 │   ├── src/
-│   │   ├── components/       # Reusable components
-│   │   ├── services/         # API client services
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── stores/          # Zustand stores
-│   │   ├── config/          # App configuration
-│   │   ├── types/           # TypeScript types
-│   │   └── utils/           # Utility functions
-│   ├── assets/              # Images, fonts
-│   ├── app.json            # Expo configuration
-│   └── package.json
+│   │   ├── components/ # UI components
+│   │   ├── services/   # API client
+│   │   ├── stores/     # Zustand state
+│   │   └── ...
+│   └── app.json
 │
-├── pnpm-workspace.yaml     # Monorepo configuration
-├── .gitignore
-└── README.md               # This file
+└── pnpm-workspace.yaml
 ```
 
 ---
 
-## 📚 API Documentation
+## 🔌 Core API Endpoints
 
-### Base URL
+### Authentication
 
 ```
-http://localhost:3000
+POST /auth/register          # Register
+POST /auth/login             # Login
+POST /auth/refresh           # Refresh token
+POST /auth/logout            # Logout
 ```
 
-### Authentication Endpoints
+### Listings
 
-```http
-POST   /auth/register              # Đăng ký tài khoản
-POST   /auth/login                 # Đăng nhập
-POST   /auth/refresh               # Refresh access token
-POST   /auth/logout                # Đăng xuất
-POST   /auth/forgot-password       # Quên mật khẩu
-POST   /auth/reset-password        # Đặt lại mật khẩu
-POST   /auth/verify-email/send     # Gửi OTP verify email
-POST   /auth/verify-email/verify   # Xác thực email
+```
+GET    /listings             # List all (with filters)
+GET    /listings/:id         # Get details
+POST   /listings             # Create (Landlord)
+PATCH  /listings/:id         # Update
+DELETE /listings/:id         # Delete
 ```
 
-### User Endpoints
+### Chat
 
-```http
-GET    /users/me                   # Lấy thông tin profile
-PATCH  /users/me                   # Cập nhật profile
-POST   /users/become-landlord      # Nâng cấp lên Landlord
+```
+POST   /chat/conversations                   # Create/get conversation
+GET    /chat/conversations                   # List conversations
+GET    /chat/conversations/:id/messages     # Get messages
+POST   /chat/conversations/:id/messages     # Send message
 ```
 
-### Listings Endpoints
-
-```http
-GET    /listings                   # Danh sách phòng trọ (có filter)
-GET    /listings/:id               # Chi tiết phòng trọ
-GET    /listings/my                # Danh sách phòng của tôi
-POST   /listings                   # Tạo tin đăng (Landlord)
-PATCH  /listings/:id               # Cập nhật tin đăng
-DELETE /listings/:id               # Xóa tin đăng
-POST   /listings/:id/photos        # Upload ảnh
-DELETE /listings/photos/:photoId   # Xóa ảnh
-```
-
-### Favorites Endpoints
-
-```http
-POST   /favorites                  # Lưu phòng yêu thích
-DELETE /favorites/:listingId       # Bỏ lưu
-GET    /favorites                  # Danh sách yêu thích
-```
-
-### Bookings Endpoints
-
-```http
-POST   /bookings                   # Tạo yêu cầu đặt phòng
-GET    /bookings                   # Danh sách yêu cầu
-GET    /bookings/:id               # Chi tiết yêu cầu
-PATCH  /bookings/:id/status        # Cập nhật trạng thái
-```
-
-### Chat Endpoints
-
-```http
-POST   /chat/conversations                    # Tạo/lấy conversation
-GET    /chat/conversations                    # Danh sách conversations
-GET    /chat/conversations/:id               # Chi tiết conversation
-GET    /chat/conversations/:id/messages      # Lấy messages
-POST   /chat/conversations/:id/messages      # Gửi message
-PATCH  /chat/conversations/:id/read          # Đánh dấu đã đọc
-```
-
-### Roommate Endpoints
-
-```http
-POST   /roommates/profile          # Tạo hồ sơ tìm bạn
-GET    /roommates/profile/me       # Lấy hồ sơ của tôi
-PATCH  /roommates/profile          # Cập nhật hồ sơ
-GET    /roommates                  # Tìm kiếm bạn cùng phòng
-```
-
-### WebSocket Events (Namespace: `/chat`)
+### WebSocket (Namespace: `/chat`)
 
 ```javascript
 // Client → Server
-register              // Đăng ký user với socket
-join_conversation     // Join vào conversation
-send_message         // Gửi tin nhắn
-typing_start         // Bắt đầu typing
-typing_stop          // Dừng typing
-mark_read            // Đánh dấu đã đọc
+register, join_conversation, send_message, typing_start
 
 // Server → Client
-new_message          // Nhận tin nhắn mới
-typing_status        // Trạng thái typing
-message_read         // Thông báo đã đọc
+new_message, typing_status, message_read
 ```
 
-### Swagger UI
-
-Truy cập: **<http://localhost:3000/api/docs>** để xem tài liệu API đầy đủ với Swagger.
+📖 **Full API Docs:** `http://localhost:3000/api/docs`
 
 ---
 
-## 🗄️ Cơ Sở Dữ Liệu
+## 🗄 Database Schema
 
-### Database Schema (11 Models)
+11 Models: `User`, `Listing`, `Photo`, `Favorite`, `BookingRequest`, `Conversation`, `ConversationParticipant`, `Message`, `Notification`, `RoommateProfile`, `VerificationToken`
 
-```mermaid
-erDiagram
-    User ||--o{ Listing : "landlord"
-    User ||--o{ BookingRequest : "renter"
-    User ||--o{ Favorite : "saves"
-    User ||--o{ Message : "sends"
-    User ||--o{ ConversationParticipant : "participates"
-    User ||--o| RoommateProfile : "has"
-    
-    Listing ||--o{ Photo : "has"
-    Listing ||--o{ BookingRequest : "receives"
-    Listing ||--o{ Favorite : "favorited"
-    
-    Conversation ||--o{ Message : "contains"
-    Conversation ||--o{ ConversationParticipant : "has"
-    
-    User {
-        string id PK
-        enum role
-        string name
-        string email
-        string password
-        string avatar
-    }
-    
-    Listing {
-        string id PK
-        string landlordId FK
-        string title
-        float price
-        float area
-        string address
-        enum status
-    }
-    
-    RoommateProfile {
-        string id PK
-        string userId FK
-        int age
-        enum gender
-        float budgetMin
-        float budgetMax
-    }
-```
+**Key Relations:**
 
-### Key Features
+- User → Listings (1:N, Landlord)
+- User → Favorites (1:N)
+- User → Messages (1:N)
+- Listing → Photos (1:N)
+- Conversation → Messages (1:N)
 
-- **User roles:** RENTER, LANDLORD
-- **Listing statuses:** AVAILABLE, RENTED, UNAVAILABLE
-- **Booking statuses:** PENDING, ACCEPTED, REJECTED, CANCELLED
-- **Cascade deletes** cho data integrity
-- **Indexed fields** cho performance
-
----
-
-## 📱 Screenshots
-
-> _Screenshots sẽ được cập nhật sau khi hoàn thiện giao diện_
-
-**Planned screens:**
-
-- Login/Register
-- Home - Danh sách phòng trọ
-- Listing Detail với Image Carousel
-- Favorites List
-- Chat Interface
-- Roommate Profiles
-- My Bookings
-- Landlord Dashboard
+View full schema: `backend/prisma/schema.prisma`
 
 ---
 
 ## 🗺️ Roadmap
 
-### ✅ Version 0.5.0 (Current)
+### ✅ v0.5.0 (Current)
 
-- ✅ Backend API hoàn chỉnh
-- ✅ Authentication & Authorization
-- ✅ Listings CRUD với search/filter
-- ✅ Favorites & Booking system
-- ✅ Real-time chat với Socket.IO
-- ✅ Roommate profile matching
-- ✅ Mobile app với UI cơ bản
-- ✅ File upload cho listings
-- ✅ Push notifications
+- Complete backend API with authentication
+- Real-time chat & notifications
+- Mobile app with core features
+- Roommate profile matching
 
-### 🔜 Version 0.6.0 (Next)
+### 🔜 v0.6.0 (Next)
 
-- [ ] Polish mobile UI/UX
-- [ ] Image optimization
-- [ ] Offline support
-- [ ] Deep linking
-- [ ] Performance optimization
+- UI/UX polish & animations
+- Image optimization
+- Offline support
+- Performance improvements
 
-### 📅 Version 1.0.0 (Future)
+### 📅 v1.0.0 (Future)
 
-- [ ] Payment integration (VNPay/Stripe)
-- [ ] Reviews & Ratings
-- [ ] Google Maps integration
-- [ ] Advanced search filters
-- [ ] Multi-language support
-- [ ] Admin dashboard
-- [ ] Analytics & reporting
-
-### 🌐 Post 1.0
-
-- [ ] Web frontend (Next.js)
-- [ ] AI-powered recommendations
-- [ ] Virtual tours (360° photos)
-- [ ] Contract management
-- [ ] KYC/Verification system
+- Payment integration (VNPay/Stripe)
+- Reviews & ratings system
+- Google Maps integration
+- Admin dashboard
 
 ---
 
-## 🤝 Đóng Góp
+## 🤝 Contributing
 
-Mọi đóng góp đều được chào đón! Vui lòng:
+Contributions are welcome! Please:
 
-1. Fork repository
-2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Mở Pull Request
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/FeatureName`
+3. Commit changes: `git commit -m 'Add FeatureName'`
+4. Push: `git push origin feature/FeatureName`
+5. Open Pull Request
 
-### Development Guidelines
+**Guidelines:**
 
-- Tuân thủ ESLint và Prettier rules
-- Viết tests cho features mới
-- Update documentation khi cần
-- Sử dụng conventional commits
+- Follow ESLint/Prettier rules
+- Use conventional commits
+- Update documentation
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+MIT License - see LICENSE file for details
 
 ---
 
-## 👥 Team
+## 👤 Author
 
-**Developer:** Xiron5123  
-**Repository:** [github.com/Xiron5123/Motel_App](https://github.com/Xiron5123/Motel_App)
-
----
-
-## 📞 Contact & Support
-
-- **Issues:** [GitHub Issues](https://github.com/Xiron5123/Motel_App/issues)
-- **Email:** <support@motelapp.com>
-- **Documentation:** [API Docs](http://localhost:3000/api/docs)
+**Xiron5123**  
+GitHub: [@Xiron5123](https://github.com/Xiron5123)  
+Repository: [Motel_App](https://github.com/Xiron5123/Motel_App)
 
 ---
 
 <div align="center">
 
-**⭐ Nếu dự án hữu ích, hãy cho một star! ⭐**
+**⭐ Star this repo if you find it helpful! ⭐**
 
 Made with ❤️ using NestJS & React Native
 

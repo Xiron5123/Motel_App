@@ -11,4 +11,9 @@ export class SendMessageDto {
   @IsString()
   @IsOptional()
   imageUrl?: string;
+
+  @ApiProperty({ example: 'clxxxx', description: 'Listing ID to attach to message', required: false })
+  @IsString()
+  @IsOptional()
+  listingId?: string;
 }

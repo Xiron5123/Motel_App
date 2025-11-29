@@ -9,6 +9,7 @@ import Animated, {
     withDelay,
     Easing
 } from 'react-native-reanimated';
+import { Image } from 'expo-image';
 import { theme } from '../../theme';
 
 const Dot = ({ delay }: { delay: number }) => {
@@ -51,34 +52,65 @@ const Dot = ({ delay }: { delay: number }) => {
     return <Animated.View style={[styles.dot, animatedStyle]} />;
 };
 
-export const TypingIndicator = () => {
+interface TypingIndicatorProps {
+    showAvatar?: boolean;
+    avatarUrl?: string;
+    userName?: string;
+}
+
+export const TypingIndicator = ({ showAvatar = true, avatarUrl, userName }: TypingIndicatorProps) => {
     return (
-        <View style={styles.container}>
-            <Dot delay={0} />
-            <Dot delay={200} />
-            <Dot delay={400} />
+        <View style={styles.wrapper}>
+            {showAvatar && avatarUrl && (
+                <Image
+                    source={{ uri: avatarUrl }}
+                    style={styles.avatar}
+                />
+            )}
+            <View style={styles.container}>
+                <Dot delay={0} />
+                <Dot delay={200} />
+                <Dot delay={400} />
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
+    wrapper: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        marginBottom: 16,
+        paddingHorizontal: 16,
+    },
+    avatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        marginRight: 8,
+        borderWidth: 2,
+        borderColor: 'black',
+    },
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 8,
-        height: 30,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 15,
-        alignSelf: 'flex-start',
-        marginLeft: 16,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        backgroundColor: 'white',
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: 'black',
+        // Hard shadow like message bubbles
+        shadowColor: 'black',
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 0,
     },
     dot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
         backgroundColor: '#666',
         marginHorizontal: 2,
     },

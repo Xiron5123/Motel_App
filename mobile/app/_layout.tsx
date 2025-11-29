@@ -7,6 +7,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { View, ActivityIndicator } from 'react-native';
 import { theme } from '../src/theme';
 import { ToastProvider } from '../src/components/providers/ToastProvider';
+import { notificationService } from '../src/services/notificationService';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -46,6 +47,30 @@ function InitialLayout() {
       router.replace('/(auth)/login');
     }
   }, [isAuthenticated, segments, isLoading, fontsLoaded]);
+
+  // Initialize push notifications when authenticated
+  // NOTE: Push notifications don't work in Expo Go (SDK 53+)
+  // Uncomment this when using development build or production app
+  /*
+  useEffect(() => {
+    if (isAuthenticated) {
+      notificationService.registerForPushNotificationsAsync();
+
+      const cleanup = notificationService.setupNotificationListeners(
+        undefined, // onReceived
+        (response) => {
+          // Handle notification tap
+          const data = response.notification.request.content.data;
+          if (data?.conversationId) {
+            router.push(`/chat/${data.conversationId}` as any);
+          }
+        }
+      );
+
+      return cleanup;
+    }
+  }, [isAuthenticated]);
+  */
 
   // Return Stack immediately to ensure stable component tree
   // SplashScreen will keep the screen hidden until we are ready

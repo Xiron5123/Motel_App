@@ -18,22 +18,14 @@ export default function MyListingsScreen() {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
 
-    const { data: listings, isLoading } = useQuery({
+    const { data: listings, isLoading, error } = useQuery({
         queryKey: ['my-listings'],
         queryFn: async () => {
-            // Assuming backend supports filtering by landlordId or we have a specific endpoint
-            // For now, let's try to fetch all and filter client side if needed, 
-            // or use a hypothetical endpoint /listings/me
-            try {
-                const response = await api.get('/listings/me');
-                return response.data;
-            } catch (error) {
-                // Fallback if /me doesn't exist, fetch all and filter (not ideal for prod)
-                const response = await api.get('/listings');
-                return response.data.filter((l: any) => l.landlordId === user?.id);
-            }
+            const response = await api.get('/listings/my');
+            return response.data;
         },
-        enabled: !!user,
+        enabled: !!user && user.role === 'LANDLORD',
+        retry: false,
     });
 
     const deleteMutation = useMutation({
@@ -108,6 +100,27 @@ export default function MyListingsScreen() {
         );
     }
 
+    // Show message if user is not a landlord
+    if (user && user.role !== 'LANDLORD') {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <BackButton />
+                    <Typography variant="h2">Tin đăng của tôi</Typography>
+                    <View style={{ width: 24 }} />
+                </View>
+                <View style={styles.empty}>
+                    <Typography variant="body" style={{ textAlign: 'center', marginBottom: 16 }}>
+                        Chỉ chủ trọ mới có thể đăng tin.
+                    </Typography>
+                    <Typography variant="caption" style={{ textAlign: 'center', color: theme.colors.textSecondary }}>
+                        Nếu bạn muốn đăng tin cho thuê phòng, vui lòng đăng ký tài khoản chủ trọ.
+                    </Typography>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -124,15 +137,17 @@ export default function MyListingsScreen() {
                 ListEmptyComponent={
                     <View style={styles.empty}>
                         <Typography variant="body">Bạn chưa có tin đăng nào.</Typography>
-                        <Button
-                            title="Đăng tin ngay"
-                            onPress={() => router.push('/(tabs)/post-listing')}
-                            variant="primary"
-                            style={{ marginTop: 16 }}
-                        />
                     </View>
                 }
             />
+
+            {/* FAB Button */}
+            <TouchableOpacity
+                style={styles.fab}
+                onPress={() => router.push('/(tabs)/post-listing')}
+            >
+                <Feather name="plus" size={24} color="white" />
+            </TouchableOpacity>
         </SafeAreaView>
     );
 }
@@ -195,5 +210,23 @@ const styles = StyleSheet.create({
     empty: {
         alignItems: 'center',
         marginTop: 40,
+    },
+    fab: {
+        position: 'absolute',
+        right: 16,
+        bottom: 16,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: theme.colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: 'black',
+        shadowColor: '#000',
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 8,
     },
 });
