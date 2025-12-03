@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -88,6 +89,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (!user.isActive) {
+      throw new ForbiddenException('Account is locked');
+    }
+
     // Generate tokens
     const { accessToken, refreshToken } = await this.generateTokens(user.id, user.email, user.role);
 
@@ -142,6 +147,7 @@ export class AuthService {
         refreshToken: newRefreshToken,
       };
     } catch (error) {
+      console.error('RefreshToken Error:', error);
       throw new UnauthorizedException('Invalid refresh token');
     }
   }

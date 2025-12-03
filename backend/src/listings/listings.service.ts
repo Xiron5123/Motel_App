@@ -41,7 +41,7 @@ export class ListingsService {
   }
 
   async findAll(query: QueryListingDto) {
-    const { q, priceMin, priceMax, amenities, lat, lng, radius, status, sortBy, page = 1, limit = 10, city, district } = query;
+    const { q, priceMin, priceMax, areaMin, areaMax, amenities, lat, lng, radius, status, sortBy, page = 1, limit = 10, city, district } = query;
 
     const skip = (page - 1) * limit;
 
@@ -74,6 +74,13 @@ export class ListingsService {
       where.price = {};
       if (priceMin !== undefined) where.price.gte = priceMin;
       if (priceMax !== undefined) where.price.lte = priceMax;
+    }
+
+    // Area range
+    if (areaMin !== undefined || areaMax !== undefined) {
+      where.area = {};
+      if (areaMin !== undefined) where.area.gte = areaMin;
+      if (areaMax !== undefined) where.area.lte = areaMax;
     }
 
     // Amenities filter

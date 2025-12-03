@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsNumber, IsArray, Min, IsEnum } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ListingStatus } from '@prisma/client';
 
 export class QueryListingDto {
@@ -33,8 +33,26 @@ export class QueryListingDto {
   @Min(0)
   priceMax?: number;
 
+  @ApiProperty({ required: false, example: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  areaMin?: number;
+
+  @ApiProperty({ required: false, example: 50 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  areaMax?: number;
+
   @ApiProperty({ required: false, example: ['wifi', 'parking'] })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') return [value];
+    return value;
+  })
   @IsArray()
   @IsString({ each: true })
   amenities?: string[];

@@ -70,6 +70,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Gửi OTP đến email' })
   @ApiResponse({ status: 200, description: 'OTP đã được gửi đến email' })
   async sendOTP(@Body('email') email: string) {
+    console.log(`[AuthController] Received send-otp request for email: ${email}`);
     return this.authService.sendOTP(email);
   }
 

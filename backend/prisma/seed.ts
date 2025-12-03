@@ -1,126 +1,197 @@
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient, Gender, Occupation } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
 
-const FIRST_NAMES = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi', 'Đỗ', 'Hồ', 'Ngô', 'Dương', 'Lý'];
-const MIDDLE_NAMES = ['Văn', 'Thị', 'Đức', 'Minh', 'Hoàng', 'Thu', 'Hải', 'Anh', 'Thanh', 'Quốc'];
-const LAST_NAMES = ['An', 'Bình', 'Cường', 'Dũng', 'Giang', 'Hà', 'Hương', 'Lan', 'Long', 'Mai', 'Nam', 'Phương', 'Quân', 'Sơn', 'Tâm', 'Thảo', 'Tuấn', 'Vân', 'Yến'];
-const CITIES = [
-    { name: 'Hà Nội', lat: 21.0285, lng: 105.8542, districts: ['Ba Đình', 'Hoàn Kiếm', 'Tây Hồ', 'Cầu Giấy', 'Đống Đa', 'Hai Bà Trưng'] },
-    { name: 'Hồ Chí Minh', lat: 10.8231, lng: 106.6297, districts: ['Quận 1', 'Quận 3', 'Quận 5', 'Quận 7', 'Quận 10', 'Bình Thạnh'] },
-    { name: 'Đà Nẵng', lat: 16.0544, lng: 108.2022, districts: ['Hải Châu', 'Thanh Khê', 'Sơn Trà'] },
-];
-const AMENITIES = ['wifi', 'parking', 'kitchen', 'ac', 'wc_private', 'fridge', 'bed', 'wardrobe'];
-const HOBBIES = ['Đọc sách', 'Xem phim', 'Du lịch', 'Nấu ăn', 'Tập gym', 'Chơi game', 'Nghe nhạc'];
-
-function randomName() {
-    return `${FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]} ${MIDDLE_NAMES[Math.floor(Math.random() * MIDDLE_NAMES.length)]} ${LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]}`;
-}
-
-function randomHobbies() {
-    return [...HOBBIES].sort(() => 0.5 - Math.random()).slice(0, 3);
-}
-
 async function main() {
-    console.log('🌱 Seeding database...\n');
-    const password = await bcrypt.hash('123456', 10);
-    const users: User[] = [];
+    console.log('Start seeding...');
 
-    // 1. Create 20 users
-    for (let i = 1; i <= 20; i++) {
-        const user = await prisma.user.upsert({
-            where: { email: `user${i}@motel.com` },
-            update: {},
-            create: {
-                email: `user${i}@motel.com`,
-                name: randomName(),
+    // 1. Create Admin (if not exists)
+    const adminEmail = 'admin@xmotelr.com';
+    const adminPassword = await bcrypt.hash('admin123', 10);
+
+    await prisma.user.upsert({
+        where: { email: adminEmail },
+        update: {
+            isActive: true,
+            avatar: `https://ui-avatars.com/api/?name=Admin+User&background=FF9F1C&color=fff&size=128`,
+        },
+        create: {
+            email: adminEmail,
+            password: adminPassword,
+            name: 'Admin User',
+            role: 'ADMIN',
+            phone: '0987654321',
+            isActive: true,
+            avatar: `https://ui-avatars.com/api/?name=Admin+User&background=FF9F1C&color=fff&size=128`,
+        },
+    });
+
+    console.log('Admin created/verified.');
+
+    // Helper for Vietnamese Names
+    const lastNames = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi', 'Đỗ', 'Hồ', 'Ngô', 'Dương', 'Lý'];
+    const middleNames = ['Văn', 'Thị', 'Minh', 'Thanh', 'Đức', 'Hồng', 'Quang', 'Kim', 'Hoài', 'Ngọc'];
+    const firstNames = ['Anh', 'Bình', 'Châu', 'Dũng', 'Em', 'Giang', 'Hà', 'Hải', 'Hiếu', 'Hòa', 'Hùng', 'Huy', 'Khánh', 'Lan', 'Linh', 'Long', 'Mai', 'Minh', 'Nam', 'Nga', 'Nhi', 'Nhung', 'Phúc', 'Quân', 'Quỳnh', 'Sơn', 'Thảo', 'Thắng', 'Thủy', 'Trang', 'Trung', 'Tú', 'Tùng', 'Vân', 'Việt', 'Yến'];
+
+    const generateVietnameseName = () => {
+        const last = lastNames[Math.floor(Math.random() * lastNames.length)];
+        const middle = middleNames[Math.floor(Math.random() * middleNames.length)];
+        const first = firstNames[Math.floor(Math.random() * firstNames.length)];
+        return `${last} ${middle} ${first}`;
+    };
+
+    // Locations Data
+    const locations = [
+        {
+            city: 'Hồ Chí Minh',
+            districts: ['Quận 1', 'Quận 3', 'Quận 5', 'Quận 10', 'Bình Thạnh', 'Phú Nhuận', 'Tân Bình', 'Gò Vấp']
+        },
+        {
+            city: 'Hà Nội',
+            districts: ['Ba Đình', 'Hoàn Kiếm', 'Tây Hồ', 'Cầu Giấy', 'Đống Đa', 'Hai Bà Trưng', 'Thanh Xuân']
+        },
+        {
+            city: 'Đà Nẵng',
+            districts: ['Hải Châu', 'Thanh Khê', 'Sơn Trà', 'Ngũ Hành Sơn', 'Liên Chiểu']
+        }
+    ];
+
+    // Furniture Options
+    const furnitureOptions = ['furniture_full', 'furniture_basic', 'furniture_empty'];
+
+    // 2. Create Landlords and Listings
+    for (let i = 0; i < 10; i++) {
+        const name = generateVietnameseName();
+        // Create email from name (remove accents and spaces)
+        const emailName = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, '.');
+        const email = `${emailName}.${Math.floor(Math.random() * 1000)}@example.com`;
+        const password = await bcrypt.hash('123456', 10);
+
+        const user = await prisma.user.create({
+            data: {
+                email,
                 password,
-                role: i <= 10 ? 'LANDLORD' : 'RENTER',
-                phone: `09${Math.floor(Math.random() * 90000000 + 10000000)}`,
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(randomName())}&background=random`,
+                name,
+                role: 'LANDLORD',
+                phone: faker.phone.number(),
+                isActive: true,
+                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=128`,
             },
         });
-        users.push(user);
-    }
-    console.log(`✅ Created ${users.length} users`);
 
-    // 2. Create 18 listings
-    const landlords = users.filter(u => u.role === 'LANDLORD');
-    for (let i = 0; i < 18; i++) {
-        const landlord = landlords[i % landlords.length];
-        const city = CITIES[Math.floor(Math.random() * CITIES.length)];
-        const district = city.districts[Math.floor(Math.random() * city.districts.length)];
-        const area = 15 + Math.floor(Math.random() * 30);
-        const amenities = [...AMENITIES].sort(() => 0.5 - Math.random()).slice(0, 5);
-        amenities.push(`furniture_${['full', 'basic', 'empty'][Math.floor(Math.random() * 3)]}`);
+        // Create Listings for this landlord
+        const numListings = Math.floor(Math.random() * 5) + 2; // 2-6 listings
+        for (let j = 0; j < numListings; j++) {
+            const location = locations[Math.floor(Math.random() * locations.length)];
+            const district = location.districts[Math.floor(Math.random() * location.districts.length)];
+            const price = parseFloat(faker.commerce.price({ min: 2000000, max: 15000000 }));
+            const area = faker.number.float({ min: 15, max: 60, fractionDigits: 1 });
 
-        await prisma.listing.create({
-            data: {
-                title: `Phòng trọ ${area}m² tại ${district}, ${city.name}`,
-                description: `Phòng trọ sạch sẽ, thoáng mát. Giờ giấc tự do, an ninh 24/7.`,
-                price: 1500000 + Math.floor(Math.random() * 50) * 100000,
-                area,
-                address: `${Math.floor(Math.random() * 500 + 1)} ${district}`,
-                city: city.name,
-                district,
-                ward: `Phường ${Math.floor(Math.random() * 20 + 1)}`,
-                lat: city.lat + (Math.random() - 0.5) * 0.1,
-                lng: city.lng + (Math.random() - 0.5) * 0.1,
-                amenities,
-                status: Math.random() > 0.2 ? 'AVAILABLE' : 'UNAVAILABLE',
-                landlordId: landlord.id,
-                photos: {
-                    create: [
-                        { url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80', order: 0 },
-                        { url: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&q=80', order: 1 },
-                    ]
+            // Determine furniture
+            const furnitureType = furnitureOptions[Math.floor(Math.random() * furnitureOptions.length)];
+            const amenities = ['Wifi', 'Chỗ để xe'];
+            if (furnitureType === 'furniture_full') {
+                amenities.push('Máy lạnh', 'Tủ lạnh', 'Máy giặt', 'Giường', 'Tủ quần áo', 'furniture_full');
+            } else if (furnitureType === 'furniture_basic') {
+                amenities.push('Máy lạnh', 'Giường', 'furniture_basic');
+            } else {
+                amenities.push('furniture_empty');
+            }
+
+            // Randomly add other amenities
+            if (Math.random() > 0.5) amenities.push('Ban công');
+            if (Math.random() > 0.5) amenities.push('Thang máy');
+            if (Math.random() > 0.5) amenities.push('Bảo vệ 24/7');
+
+            await prisma.listing.create({
+                data: {
+                    landlordId: user.id,
+                    title: `Phòng trọ ${district} - ${area}m2 - ${furnitureType === 'furniture_full' ? 'Full nội thất' : furnitureType === 'furniture_basic' ? 'Nội thất cơ bản' : 'Nhà trống'}`,
+                    description: `Cho thuê phòng trọ tại ${district}, ${location.city}.\nDiện tích: ${area}m2.\nGiá: ${price.toLocaleString('vi-VN')} VND.\nTiện ích: ${amenities.join(', ')}.\nLiên hệ ngay: ${user.phone}`,
+                    price: price,
+                    deposit: price,
+                    area: area,
+                    address: `${faker.number.int({ min: 1, max: 999 })} đường ${faker.person.lastName()}`, // Fake street name roughly
+                    city: location.city,
+                    district: district,
+                    ward: 'Phường X',
+                    amenities: amenities,
+                    status: 'AVAILABLE',
+                    photos: {
+                        create: [
+                            { url: `https://picsum.photos/seed/${faker.string.uuid()}/800/600` },
+                            { url: `https://picsum.photos/seed/${faker.string.uuid()}/800/600` },
+                            { url: `https://picsum.photos/seed/${faker.string.uuid()}/800/600` },
+                        ]
+                    }
                 }
-            }
-        });
+            });
+        }
     }
-    console.log('✅ Created 18 listings');
+    console.log('Landlords and Listings created.');
 
-    // 3. Create 10 roommate profiles
-    const renters = users.filter(u => u.role === 'RENTER');
-    for (const renter of renters) {
-        const city = CITIES[Math.floor(Math.random() * CITIES.length)];
-        const district = city.districts[Math.floor(Math.random() * city.districts.length)];
-        const age = 20 + Math.floor(Math.random() * 15);
-        const gender: 'MALE' | 'FEMALE' = Math.random() > 0.5 ? 'MALE' : 'FEMALE';
-        const budgetMin = 1500000 + Math.floor(Math.random() * 20) * 100000;
-        const occupation: 'STUDENT' | 'WORKER' | 'OTHER' = ['STUDENT', 'WORKER', 'OTHER'][Math.floor(Math.random() * 3)] as any;
+    // 3. Create Renters and Roommate Profiles
+    const jobs = ['Sinh viên', 'Nhân viên văn phòng', 'Lập trình viên', 'Kế toán', 'Marketing', 'Giáo viên', 'Bác sĩ', 'Kỹ sư', 'Designer', 'Freelancer'];
+    const intros = [
+        'Mình là người hòa đồng, vui vẻ, sạch sẽ.',
+        'Cần tìm bạn ở ghép tính tình thoải mái, tôn trọng riêng tư.',
+        'Mình đi làm cả ngày, tối về chỉ cần yên tĩnh nghỉ ngơi.',
+        'Thích nấu ăn, cuối tuần có thể cùng nhau nấu nướng.',
+        'Không hút thuốc, không nuôi thú cưng, sống kỷ luật.',
+        'Tìm bạn ở ghép khu vực trung tâm để tiện đi làm.',
+        'Sinh viên năm cuối cần tìm người ở ghép để share tiền phòng.',
+        'Mình khá trầm tính, ít nói nhưng sống biết điều.'
+    ];
 
-        await prisma.roommateProfile.upsert({
-            where: { userId: renter.id },
-            update: {},
-            create: {
-                userId: renter.id,
-                name: renter.name,
-                age,
-                gender,
-                job: occupation === 'STUDENT' ? 'Sinh viên' : 'Nhân viên',
-                budgetMin,
-                budgetMax: budgetMin + 1000000,
-                location: `${district}, ${city.name}`,
-                intro: `Tìm bạn ở ghép tại ${district}. Mình ${age} tuổi, thân thiện!`,
-                avatar: renter.avatar,
-                habits: randomHobbies(),
-                occupation,
-            }
+    for (let i = 0; i < 20; i++) {
+        const name = generateVietnameseName();
+        const emailName = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, '.');
+        const email = `${emailName}.${Math.floor(Math.random() * 1000)}@example.com`;
+        const password = await bcrypt.hash('123456', 10);
+
+        const user = await prisma.user.create({
+            data: {
+                email,
+                password,
+                name,
+                role: 'RENTER',
+                phone: faker.phone.number(),
+                isActive: Math.random() > 0.05, // 5% chance of being locked
+                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=128`,
+            },
         });
+
+        // Create Roommate Profile for some renters (60%)
+        if (Math.random() > 0.4) {
+            const location = locations[Math.floor(Math.random() * locations.length)];
+            const district = location.districts[Math.floor(Math.random() * location.districts.length)];
+
+            await prisma.roommateProfile.create({
+                data: {
+                    userId: user.id,
+                    name: user.name,
+                    age: faker.number.int({ min: 18, max: 35 }),
+                    gender: Math.random() > 0.5 ? Gender.MALE : Gender.FEMALE,
+                    job: jobs[Math.floor(Math.random() * jobs.length)],
+                    budgetMin: 1500000,
+                    budgetMax: 5000000,
+                    location: `${district}, ${location.city}`,
+                    intro: intros[Math.floor(Math.random() * intros.length)],
+                    occupation: Math.random() > 0.3 ? Occupation.WORKER : Occupation.STUDENT,
+                    habits: ['Sạch sẽ', 'Không hút thuốc', 'Thích yên tĩnh', 'Hòa đồng'].sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 3) + 1),
+                }
+            });
+        }
     }
-    console.log('✅ Created 10 roommate profiles\n');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🎉 SEED COMPLETE!');
-    console.log('📊 SUMMARY: 20 users, 18 listings, 10 profiles');
-    console.log('🔐 LOGIN: user1@motel.com - user20@motel.com | Password: 123456');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    console.log('Renters and Roommate Profiles created.');
+    console.log('Seeding finished.');
 }
 
 main()
     .catch((e) => {
-        console.error('❌ Error:', e);
+        console.error(e);
         process.exit(1);
     })
     .finally(async () => {

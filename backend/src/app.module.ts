@@ -18,6 +18,8 @@ import { ChatModule } from './chat/chat.module';
 import { RoommatesModule } from './roommates/roommates.module';
 import { EventsModule } from './events/events.module';
 import { UploadModule } from './upload/upload.module';
+import { ReportsModule } from './reports/reports.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -46,6 +48,8 @@ import { UploadModule } from './upload/upload.module';
     RoommatesModule,
     EventsModule,
     UploadModule,
+    ReportsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

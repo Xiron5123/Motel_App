@@ -10,58 +10,6 @@
 
 ---
 
-## 📋 Tính Năng Chính
-
-### 🔐 Xác Thực & Người Dùng
-
-- Đăng ký/Đăng nhập với JWT + Refresh Token
-- Phân quyền: Renter & Landlord
-- Quản lý profile & avatar
-
-### 🏘️ Quản Lý Phòng Trọ
-
-- Đăng tin & quản lý listings (Landlord)
-- Tìm kiếm, lọc theo giá, diện tích, tiện nghi
-- Upload nhiều ảnh cho mỗi phòng
-- Lưu danh sách yêu thích
-- Yêu cầu đặt phòng
-
-### 💬 Chat Realtime
-
-- Nhắn tin 1-1 với Socket.IO
-- Gửi template tin nhắn khi đặt phòng
-- Hiển thị listing card trong chat
-- Typing indicator & message status
-- Thông báo realtime
-
-### 🤝 Tìm Bạn Cùng Phòng
-
-- Tạo hồ sơ tìm bạn
-- Lọc theo ngân sách, khu vực, sở thích
-- Kết nối trực tiếp qua chat
-
----
-
-## 🛠 Tech Stack
-
-**Backend:**
-
-- NestJS 11.x | PostgreSQL 15 | Prisma ORM 6.x
-- Socket.IO 4.x | JWT Authentication | Bcrypt
-- Swagger API Documentation
-
-**Mobile:**
-
-- React Native 0.81 | Expo ~54.0 | Expo Router ~6.0
-- React Query 5.x | Zustand 5.x | Socket.IO Client
-- React Hook Form + Zod Validation
-
-**DevOps:**
-
-- pnpm Workspace (Monorepo) | Docker Compose | Git
-
----
-
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -210,49 +158,6 @@ View full schema: `backend/prisma/schema.prisma`
 
 ---
 
-## 🗺️ Roadmap
-
-### ✅ v0.5.0 (Current)
-
-- Complete backend API with authentication
-- Real-time chat & notifications
-- Mobile app with core features
-- Roommate profile matching
-
-### 🔜 v0.6.0 (Next)
-
-- UI/UX polish & animations
-- Image optimization
-- Offline support
-- Performance improvements
-
-### 📅 v1.0.0 (Future)
-
-- Payment integration (VNPay/Stripe)
-- Reviews & ratings system
-- Google Maps integration
-- Admin dashboard
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/FeatureName`
-3. Commit changes: `git commit -m 'Add FeatureName'`
-4. Push: `git push origin feature/FeatureName`
-5. Open Pull Request
-
-**Guidelines:**
-
-- Follow ESLint/Prettier rules
-- Use conventional commits
-- Update documentation
-
----
-
 ## 📄 License
 
 MIT License - see LICENSE file for details
@@ -262,6 +167,8 @@ MIT License - see LICENSE file for details
 ## 👤 Author
 
 **Xiron5123**  
+Email: <tmanh15112003@gmail.com>  
+Facebook: [Xiron513](https://www.facebook.com/xiron513/)  
 GitHub: [@Xiron5123](https://github.com/Xiron5123)  
 Repository: [Motel_App](https://github.com/Xiron5123/Motel_App)
 

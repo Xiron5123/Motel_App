@@ -1,46 +1,57 @@
-import { Controller, Get, Post, Patch, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Patch, Param, Body, Query, UseGuards, Delete } from '@nestjs/common';
+import { GetUser } from '../auth/decorators/get-user.decorator';
 import { UsersService } from './users.service';
-import { BecomeLandlordDto } from './dto/become-landlord.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '@prisma/client';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Users')
-@Controller('users')
-@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('users')
 export class UsersController {
-  constructor(private usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) { }
 
   @Get('me')
-  @ApiOperation({ summary: 'Lấy thông tin tài khoản' })
-  @ApiResponse({ status: 200, description: 'Lấy thông tin thành công' })
-  async getMe(@CurrentUser() user: any) {
-    return this.usersService.getProfile(user.id);
+  @ApiOperation({ summary: 'Get current user profile' })
+  getProfile(@GetUser() user: any) {
+    return this.usersService.findOne(user.id);
   }
 
-  @Patch('me')
-  @ApiOperation({ summary: 'Cập nhật thông tin tài khoản' })
-  @ApiResponse({ status: 200, description: 'Cập nhật thành công' })
-  async updateMe(@CurrentUser() user: any, @Body() dto: UpdateUserDto) {
-    return this.usersService.updateProfile(user.id, dto);
+  @Get()
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'List users (Admin only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  findAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+  ) {
+    return this.usersService.findAll(page ? +page : 1, limit ? +limit : 10, search);
   }
 
-  @Patch('change-password')
-  @ApiOperation({ summary: 'Đổi mật khẩu' })
-  @ApiResponse({ status: 200, description: 'Đổi mật khẩu thành công' })
-  @ApiResponse({ status: 400, description: 'Mật khẩu hiện tại không đúng' })
-  async changePassword(@CurrentUser() user: any, @Body() dto: ChangePasswordDto) {
-    return this.usersService.changePassword(user.id, dto);
+  @Patch(':id/status')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Update user status (Lock/Unlock)' })
+  updateStatus(@Param('id') id: string, @Body('isActive') isActive: boolean) {
+    return this.usersService.updateStatus(id, isActive);
   }
 
-  @Post('become-landlord')
-  @ApiOperation({ summary: 'Nâng cấp tài khoản thành chủ trọ' })
-  @ApiResponse({ status: 200, description: 'Nâng cấp thành công' })
-  @ApiResponse({ status: 400, description: 'Đã là chủ trọ hoặc thiếu thông tin' })
-  async becomeLandlord(@CurrentUser() user: any, @Body() dto: BecomeLandlordDto) {
-    return this.usersService.becomeLandlord(user.id, dto);
+  @Patch(':id')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Update user details' })
+  update(@Param('id') id: string, @Body() updateUserDto: any) {
+    return this.usersService.update(id, updateUserDto);
+  }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Delete user' })
+  remove(@Param('id') id: string) {
+    return this.usersService.remove(id);
   }
 }

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '../src/store/authStore';
 import * as SplashScreen from 'expo-splash-screen';
 import { View, ActivityIndicator } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { theme } from '../src/theme';
 import { ToastProvider } from '../src/components/providers/ToastProvider';
 import { notificationService } from '../src/services/notificationService';
@@ -89,9 +90,11 @@ function InitialLayout() {
 export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <InitialLayout />
-      </ToastProvider>
+      <SafeAreaProvider>
+        <ToastProvider>
+          <InitialLayout />
+        </ToastProvider>
+      </SafeAreaProvider>
     </QueryClientProvider>
   );
 }

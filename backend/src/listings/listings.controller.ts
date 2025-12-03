@@ -35,7 +35,7 @@ export class ListingsController {
 
   @Get('my')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.LANDLORD)
+  @Roles(Role.LANDLORD, Role.RENTER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Lấy danh sách phòng của tôi (chủ trọ)' })
   getMyListings(@CurrentUser() user: any, @Query() query: QueryListingDto) {

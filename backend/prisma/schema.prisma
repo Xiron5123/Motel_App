@@ -16,6 +16,7 @@ model User {
   password        String
   avatar          String?
   pushToken       String?
+  isActive        Boolean                   @default(true)
   createdAt       DateTime                  @default(now())
   updatedAt       DateTime                  @updatedAt
   bookingRequests BookingRequest[]
@@ -28,6 +29,8 @@ model User {
   roommateProfile RoommateProfile?
   passwordResetTokens PasswordResetToken[]
   pushTokens      PushToken[]
+  reportsMade     Report[]                  @relation("Reporter")
+  reportsReceived Report[]                  @relation("ReportedUser")
 
   @@index([email])
   @@index([phone])
@@ -157,11 +160,14 @@ model Message {
   content        String?
   imageUrl       String?
   listingId      String?
+  isRecalled     Boolean      @default(false)
+  deletedBy      String[]
   sentAt         DateTime     @default(now())
   readAt         DateTime?
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
   listing        Listing?     @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  reports        Report[]
 
   @@index([conversationId])
   @@index([senderId])
@@ -231,6 +237,7 @@ model RefreshToken {
 enum Role {
   RENTER
   LANDLORD
+  ADMIN
 }
 
 enum ListingStatus {
@@ -269,4 +276,27 @@ model EmailVerificationOTP {
 
   @@index([email])
   @@index([expiresAt])
+}
+
+model Report {
+  id             String        @id @default(cuid())
+  reporterId     String
+  reason         String
+  status         ReportStatus  @default(PENDING)
+  reportedUserId String?
+  messageId      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  reporter       User          @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser   User?         @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  message        Message?      @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([reporterId])
+  @@index([status])
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  REJECTED
 }

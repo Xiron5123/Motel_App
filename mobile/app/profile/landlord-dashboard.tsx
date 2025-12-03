@@ -178,15 +178,17 @@ export default function LandlordDashboardScreen() {
                             <Typography variant="body" style={styles.emptyText}>
                                 Đăng tin ngay để tìm khách thuê nhanh chóng!
                             </Typography>
-                            <Button
-                                title="Đăng tin ngay"
-                                onPress={() => router.push('/(tabs)/post-listing')}
-                                style={styles.emptyButton}
-                            />
                         </View>
                     ) : null
                 }
             />
+
+            <TouchableOpacity
+                style={styles.fab}
+                onPress={() => router.push('/(tabs)/post-listing')}
+            >
+                <Feather name="plus" size={24} color="white" />
+            </TouchableOpacity>
         </SafeAreaView>
     );
 }
@@ -230,6 +232,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         padding: 20,
+        paddingBottom: 80, // Add padding for FAB
     },
     card: {
         flexDirection: 'row',
@@ -347,5 +350,21 @@ const styles = StyleSheet.create({
     },
     emptyButton: {
         minWidth: 200,
+    },
+    fab: {
+        position: 'absolute',
+        bottom: 24,
+        right: 24,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: theme.colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 6,
     },
 });

@@ -13,6 +13,8 @@ import * as SecureStore from 'expo-secure-store';
 import { Typography } from '../../src/components/ui/Typography';
 import { BackButton } from '../../src/components/ui/BackButton';
 import { TypingIndicator } from '../../src/components/ui/TypingIndicator';
+import { ReportModal } from '../../src/components/ReportModal';
+import { MessageOptionsModal } from '../../src/components/MessageOptionsModal';
 import { theme } from '../../src/theme';
 import api from '../../src/services/api';
 import { useAuthStore } from '../../src/store/authStore';
@@ -34,6 +36,7 @@ interface Message {
     senderId: string;
     conversationId: string;
     sentAt: string;
+    isRecalled: boolean;
     sender: {
         id: string;
         name: string;
@@ -56,26 +59,61 @@ export default function ChatDetailScreen() {
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const [reportModalVisible, setReportModalVisible] = useState(false);
+    const [selectedMessageIdForReport, setSelectedMessageIdForReport] = useState<string | null>(null);
+    const [selectedUserIdForReport, setSelectedUserIdForReport] = useState<string | null>(null);
+
     // Fetch conversation details
     const { data: conversation } = useQuery({
         queryKey: ['conversation', id],
         queryFn: async () => {
-            const response = await api.get(`/chat/conversations/${id}`);
-            return response.data;
+            console.log(`[ChatDetailScreen] Fetching conversation details for ${id}...`);
+            try {
+                const response = await api.get(`/chat/conversations/${id}`);
+                console.log('[ChatDetailScreen] Fetched conversation details:', response.data);
+                return response.data;
+            } catch (error) {
+                console.error('[ChatDetailScreen] Failed to fetch conversation details:', error);
+                throw error;
+            }
         },
         enabled: !!id,
     });
 
     // Fetch initial messages
-    const { isLoading: isLoadingMessages } = useQuery({
+    const { data: initialMessages, isLoading: isLoadingMessages, refetch: refetchMessages } = useQuery({
         queryKey: ['messages', id],
         queryFn: async () => {
-            const response = await api.get(`/chat/conversations/${id}/messages?limit=50`);
-            setMessages(response.data);
-            return response.data;
+            console.log(`[ChatDetailScreen] Fetching messages for conversation ID: ${id} (type: ${typeof id})...`);
+            try {
+                const response = await api.get(`/chat/conversations/${id}/messages?limit=50`);
+                console.log(`[ChatDetailScreen] Fetched ${response.data.length} messages from API`);
+                return response.data;
+            } catch (error) {
+                console.error('[ChatDetailScreen] Failed to fetch messages:', error);
+                throw error;
+            }
         },
         enabled: !!id,
     });
+
+    // Refetch on focus
+    useFocusEffect(
+        React.useCallback(() => {
+            if (id) {
+                console.log('[ChatDetailScreen] Screen focused, refetching messages...');
+                refetchMessages();
+            }
+        }, [id, refetchMessages])
+    );
+
+    // Sync messages from query to state
+    useEffect(() => {
+        if (initialMessages) {
+            console.log(`[ChatDetailScreen] Syncing ${initialMessages.length} messages to state`);
+            setMessages(initialMessages);
+        }
+    }, [initialMessages]);
 
     useEffect(() => {
         if (!id) return;
@@ -90,6 +128,15 @@ export default function ChatDetailScreen() {
             }
         };
 
+        const handleMessageRecalled = (updatedMessage: Message) => {
+            console.log('Message recalled:', updatedMessage);
+            if (updatedMessage.conversationId === id) {
+                setMessages((prev) => prev.map(msg =>
+                    msg.id === updatedMessage.id ? { ...msg, isRecalled: true } : msg
+                ));
+            }
+        };
+
         const handleTypingStatus = (data: { conversationId: string, typingUsers: string[] }) => {
             if (data.conversationId === id) {
                 // Check if anyone OTHER than me is typing
@@ -99,10 +146,12 @@ export default function ChatDetailScreen() {
         };
 
         socketService.on('new_message', handleNewMessage);
+        socketService.on('message_recalled', handleMessageRecalled);
         socketService.on('typing_status', handleTypingStatus);
 
         return () => {
             socketService.off('new_message');
+            socketService.off('message_recalled');
             socketService.off('typing_status');
             socketService.emit('leave_conversation', { conversationId: id });
         };
@@ -234,10 +283,112 @@ export default function ChatDetailScreen() {
         }
     };
 
+    const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+
+    const handleMessageLongPress = (message: Message) => {
+        setSelectedMessage(message);
+    };
+
+    const confirmRecall = (messageId: string) => {
+        Alert.alert(
+            'Xác nhận thu hồi',
+            'Bạn có chắc chắn muốn thu hồi tin nhắn này không?',
+            [
+                { text: 'Hủy', style: 'cancel' },
+                {
+                    text: 'Thu hồi',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await api.post(`/chat/messages/${messageId}/recall`);
+                            // UI update handled by socket event
+                        } catch (error) {
+                            Alert.alert('Lỗi', 'Không thể thu hồi tin nhắn');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const confirmDelete = (messageId: string) => {
+        Alert.alert(
+            'Xác nhận xóa',
+            'Tin nhắn sẽ bị xóa khỏi lịch sử chat của bạn. Người khác vẫn có thể thấy tin nhắn này.',
+            [
+                { text: 'Hủy', style: 'cancel' },
+                {
+                    text: 'Xóa',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await api.delete(`/chat/messages/${messageId}`);
+                            // Manually remove from list since this is local only and might not trigger socket for self if not handled
+                            setMessages((prev) => prev.filter(m => m.id !== messageId));
+                        } catch (error) {
+                            Alert.alert('Lỗi', 'Không thể xóa tin nhắn');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleReportSubmit = async (reason: string) => {
+        try {
+            if (selectedMessageIdForReport) {
+                await api.post('/reports', {
+                    reason,
+                    messageId: selectedMessageIdForReport,
+                });
+            } else if (selectedUserIdForReport) {
+                await api.post('/reports', {
+                    reason,
+                    reportedUserId: selectedUserIdForReport,
+                });
+            } else {
+                return;
+            }
+
+            Alert.alert('Thành công', 'Đã gửi báo cáo vi phạm. Cảm ơn bạn đã đóng góp!');
+        } catch (error) {
+            console.error('Report error:', error);
+            Alert.alert('Lỗi', 'Không thể gửi báo cáo. Vui lòng thử lại sau.');
+        } finally {
+            setSelectedMessageIdForReport(null);
+            setSelectedUserIdForReport(null);
+        }
+    };
+
     const otherParticipant = conversation?.participants?.find((p: any) => p.userId !== user?.id)?.user;
 
     const renderItem = ({ item }: { item: Message }) => {
         const isMe = item.senderId === user?.id;
+
+        if (item.isRecalled) {
+            return (
+                <View style={[
+                    styles.messageContainer,
+                    isMe ? styles.myMessageContainer : styles.theirMessageContainer
+                ]}>
+                    {!isMe && (
+                        <Image
+                            source={{ uri: getImageUrl(item.sender.avatar, item.sender.name) }}
+                            style={styles.avatar}
+                        />
+                    )}
+                    <View style={[
+                        styles.bubble,
+                        isMe ? styles.myBubble : styles.theirBubble,
+                        styles.recalledBubble
+                    ]}>
+                        <Typography variant="body" style={styles.recalledText}>
+                            Tin nhắn đã được thu hồi
+                        </Typography>
+                    </View>
+                </View>
+            );
+        }
 
         return (
             <View style={[
@@ -252,10 +403,14 @@ export default function ChatDetailScreen() {
                         />
                     </TouchableOpacity>
                 )}
-                <View style={[
-                    styles.bubble,
-                    isMe ? styles.myBubble : styles.theirBubble
-                ]}>
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onLongPress={() => handleMessageLongPress(item)}
+                    style={[
+                        styles.bubble,
+                        isMe ? styles.myBubble : styles.theirBubble
+                    ]}
+                >
                     {/* Listing Card */}
                     {item.listing && (
                         <TouchableOpacity
@@ -302,7 +457,7 @@ export default function ChatDetailScreen() {
                     <Typography variant="caption" style={isMe ? styles.myTime : styles.theirTime}>
                         {formatDistanceToNow(new Date(item.sentAt), { addSuffix: true, locale: vi })}
                     </Typography>
-                </View>
+                </TouchableOpacity>
             </View>
         );
     };
@@ -324,6 +479,19 @@ export default function ChatDetailScreen() {
                         <Typography variant="h3" style={{ fontWeight: 'bold' }}>{otherParticipant.name}</Typography>
                     </TouchableOpacity>
                 )}
+
+                {/* Report User Button */}
+                {otherParticipant && (
+                    <TouchableOpacity
+                        style={styles.reportUserButton}
+                        onPress={() => {
+                            setSelectedUserIdForReport(otherParticipant.id);
+                            setReportModalVisible(true);
+                        }}
+                    >
+                        <Feather name="flag" size={20} color="black" />
+                    </TouchableOpacity>
+                )}
             </View>
 
             {/* Chat Content */}
@@ -333,22 +501,30 @@ export default function ChatDetailScreen() {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 {/* Messages List */}
-                {isLoadingMessages ? (
-                    <View style={styles.loading}>
-                        <ActivityIndicator size="large" color="black" />
-                    </View>
-                ) : (
-                    <FlatList
-                        ref={flatListRef}
-                        data={messages}
-                        renderItem={renderItem}
-                        keyExtractor={(item) => item.id}
-                        inverted
-                        contentContainerStyle={[styles.listContent, { paddingBottom: 20 }]}
-                        showsVerticalScrollIndicator={false}
-                        keyboardShouldPersistTaps="handled"
-                    />
-                )}
+                <View style={{ flex: 1 }}>
+                    {isLoadingMessages ? (
+                        <View style={styles.loading}>
+                            <ActivityIndicator size="large" color="black" />
+                        </View>
+                    ) : (
+                        <FlatList
+                            ref={flatListRef}
+                            data={messages}
+                            renderItem={renderItem}
+                            keyExtractor={(item) => item.id}
+                            inverted
+                            style={{ flex: 1 }}
+                            contentContainerStyle={[styles.listContent, { paddingBottom: 20, flexGrow: 1 }]}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                            ListEmptyComponent={
+                                <View style={{ padding: 20, alignItems: 'center', flex: 1, justifyContent: 'center' }}>
+                                    <Typography style={{ color: '#666' }}>Chưa có tin nhắn nào</Typography>
+                                </View>
+                            }
+                        />
+                    )}
+                </View>
 
                 {/* Typing Indicator */}
                 {isTyping && <TypingIndicator />}
@@ -411,6 +587,42 @@ export default function ChatDetailScreen() {
                     </TouchableOpacity>
                 </View>
             </Modal>
+
+            {/* Report Modal */}
+            <ReportModal
+                visible={reportModalVisible}
+                onClose={() => setReportModalVisible(false)}
+                onSubmit={handleReportSubmit}
+                title={selectedUserIdForReport ? "Báo cáo người dùng" : "Báo cáo tin nhắn"}
+            />
+
+            {/* Message Options Modal */}
+            <MessageOptionsModal
+                visible={!!selectedMessage}
+                onClose={() => setSelectedMessage(null)}
+                isMe={selectedMessage?.senderId === user?.id}
+                isRecalled={selectedMessage?.isRecalled || false}
+                content={selectedMessage?.content}
+                onRecall={() => {
+                    if (selectedMessage) {
+                        confirmRecall(selectedMessage.id);
+                        setSelectedMessage(null);
+                    }
+                }}
+                onDelete={() => {
+                    if (selectedMessage) {
+                        confirmDelete(selectedMessage.id);
+                        setSelectedMessage(null);
+                    }
+                }}
+                onReport={() => {
+                    if (selectedMessage) {
+                        setSelectedMessageIdForReport(selectedMessage.id);
+                        setReportModalVisible(true);
+                        setSelectedMessage(null);
+                    }
+                }}
+            />
         </SafeAreaView>
     );
 }
@@ -435,6 +647,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginLeft: 16, // Add margin to separate from BackButton
+        flex: 1,
     },
     headerAvatar: {
         width: 40,
@@ -443,6 +656,9 @@ const styles = StyleSheet.create({
         marginRight: 12,
         borderWidth: 2,
         borderColor: 'black',
+    },
+    reportUserButton: {
+        padding: 8,
     },
     loading: {
         flex: 1,
@@ -489,6 +705,15 @@ const styles = StyleSheet.create({
     },
     theirBubble: {
         backgroundColor: 'white',
+    },
+    recalledBubble: {
+        backgroundColor: '#E0E0E0',
+        borderColor: '#999',
+    },
+    recalledText: {
+        color: '#666',
+        fontStyle: 'italic',
+        fontSize: 12,
     },
     myText: {
         color: 'white',
@@ -629,3 +854,4 @@ const styles = StyleSheet.create({
         zIndex: 1,
     },
 });
+

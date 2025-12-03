@@ -132,6 +132,7 @@ export class ChatService {
 
   // Lấy danh sách conversations của user
   async getConversations(userId: string) {
+    console.log(`[ChatService] getConversations for userId: ${userId}`);
     const conversations = await this.prisma.conversation.findMany({
       where: {
         participants: {
@@ -183,6 +184,8 @@ export class ChatService {
         lastMessageAt: 'desc',
       },
     });
+
+    console.log(`[ChatService] Found ${conversations.length} conversations`);
 
     // Get unread counts for all conversations at once (avoid N+1 query)
     const conversationIds = conversations.map((c) => c.id);
@@ -237,7 +240,7 @@ export class ChatService {
     });
 
     if (!conversation) {
-      throw new NotFoundException('Conversation not found');
+      throw new NotFoundException('Không tìm thấy cuộc trò chuyện');
     }
 
     // Kiểm tra user có trong conversation không
@@ -245,7 +248,7 @@ export class ChatService {
       (p) => p.userId === userId,
     );
     if (!isParticipant) {
-      throw new ForbiddenException('You are not part of this conversation');
+      throw new ForbiddenException('Bạn không phải là thành viên của cuộc trò chuyện này');
     }
 
     return conversation;
@@ -253,12 +256,18 @@ export class ChatService {
 
   // Lấy messages trong conversation
   async getMessages(conversationId: string, userId: string, limit = 50, before?: string) {
+    console.log(`[ChatService] getMessages for conversation: ${conversationId}, user: ${userId}`);
     // Verify user is participant
     await this.getConversationById(conversationId, userId);
 
     const messages = await this.prisma.message.findMany({
       where: {
         conversationId,
+        // NOT: {
+        //   deletedBy: {
+        //     has: userId,
+        //   },
+        // },
         ...(before && {
           sentAt: {
             lt: new Date(before),
@@ -290,6 +299,7 @@ export class ChatService {
       },
     });
 
+    console.log(`[ChatService] Found ${messages.length} messages`);
     return messages; // Trả về newest -> oldest (để inverted FlatList hiển thị đúng)
   }
 
@@ -360,6 +370,92 @@ export class ChatService {
       });
     }
 
-    return { message: 'Marked as read', count: result.count };
+    return { message: 'Đã đánh dấu là đã đọc', count: result.count };
+  }
+
+  // Thu hồi tin nhắn
+  async recallMessage(messageId: string, userId: string) {
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+
+    if (!message) {
+      throw new NotFoundException('Không tìm thấy tin nhắn');
+    }
+
+    if (message.senderId !== userId) {
+      throw new ForbiddenException('Bạn chỉ có thể thu hồi tin nhắn của chính mình');
+    }
+
+    const updatedMessage = await this.prisma.message.update({
+      where: { id: messageId },
+      data: { isRecalled: true },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        listing: {
+          select: {
+            id: true,
+            title: true,
+            price: true,
+            address: true,
+            photos: {
+              take: 1,
+              select: { url: true },
+            },
+          },
+        },
+      },
+    });
+
+    // Emit event
+    this.eventsGateway.emitToRoom(
+      message.conversationId,
+      'message_recalled',
+      updatedMessage,
+    );
+
+    return updatedMessage;
+  }
+
+  // Xóa tin nhắn ở phía người dùng (Gỡ)
+  async deleteMessage(messageId: string, userId: string) {
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+
+    if (!message) {
+      throw new NotFoundException('Không tìm thấy tin nhắn');
+    }
+
+    // Verify user is participant (optional but good for security)
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: message.conversationId },
+      include: { participants: true },
+    });
+
+    const isParticipant = conversation?.participants.some(
+      (p) => p.userId === userId,
+    );
+
+    if (!isParticipant) {
+      throw new ForbiddenException('Bạn không phải là thành viên của cuộc trò chuyện này');
+    }
+
+    await this.prisma.message.update({
+      where: { id: messageId },
+      data: {
+        deletedBy: {
+          push: userId,
+        },
+      },
+    });
+
+    return { message: 'Đã xóa tin nhắn' };
   }
 }

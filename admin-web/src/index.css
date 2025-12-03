@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-[#f0f0f0] text-black font-mono;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-black uppercase tracking-tight;
+    }
+}
+
+@layer components {
+    .btn-brutal {
+        @apply px-6 py-3 bg-white border-2 border-black rounded-xl transition-all font-bold uppercase;
+        box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+    }
+
+    .btn-brutal:hover {
+        transform: translate(2px, 2px);
+        box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+    }
+
+    .btn-brutal:active {
+        transform: translate(4px, 4px);
+        box-shadow: none;
+    }
+
+    .btn-brutal-primary {
+        @apply bg-[#FF9F1C] text-black border-black hover:bg-[#FFBF69];
+    }
+
+    .btn-brutal-danger {
+        @apply bg-[#FF5D5D] text-white border-black hover:bg-[#FF8787];
+    }
+
+    .card-brutal {
+        @apply bg-white border-2 border-black rounded-xl p-6;
+        box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+    }
+
+    .input-brutal {
+        @apply w-full px-4 py-3 border-2 border-black rounded-xl focus:outline-none transition-shadow font-bold bg-[#F4F4F4];
+    }
+
+    .input-brutal:focus {
+        box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+        @apply bg-white;
+    }
+
+    .badge-brutal {
+        @apply px-3 py-1 border-2 border-black rounded-lg font-bold text-xs uppercase;
+        box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+    }
+}

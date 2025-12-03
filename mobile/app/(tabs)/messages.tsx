@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -22,10 +22,23 @@ export default function MessagesScreen() {
     const { data: conversations = [], isLoading, refetch } = useQuery({
         queryKey: ['conversations'],
         queryFn: async () => {
-            const response = await api.get('/chat/conversations');
-            return response.data;
+            console.log('[MessagesScreen] Fetching conversations...');
+            try {
+                const response = await api.get('/chat/conversations');
+                console.log('[MessagesScreen] Fetched conversations:', response.data.length);
+                return response.data;
+            } catch (error) {
+                console.error('[MessagesScreen] Failed to fetch conversations:', error);
+                throw error;
+            }
         },
     });
+
+    useFocusEffect(
+        React.useCallback(() => {
+            refetch();
+        }, [])
+    );
 
     React.useEffect(() => {
         const handleNewMessage = (message: any) => {

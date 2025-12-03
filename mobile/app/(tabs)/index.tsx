@@ -61,7 +61,7 @@ export default function HomeScreen() {
 
   // Temp filter states
   const [tempPriceRange, setTempPriceRange] = useState([0, 30]);
-  const [tempAreaRange, setTempAreaRange] = useState([0, 100]);
+  const [tempAreaRange, setTempAreaRange] = useState([0, 200]);
   const [tempFurniture, setTempFurniture] = useState<string | null>(null);
   const [tempCity, setTempCity] = useState<string | null>(null);
   const [tempDistrict, setTempDistrict] = useState<string | null>(null);
@@ -84,7 +84,7 @@ export default function HomeScreen() {
       setTempPriceRange([min, max]);
     } else if (type === FILTER_TYPES.AREA) {
       const min = filters.areaMin || 0;
-      const max = filters.areaMax || 100;
+      const max = filters.areaMax || 200;
       setTempAreaRange([min, max]);
     } else if (type === FILTER_TYPES.FURNITURE) {
       const furniture = filters.amenities?.find(a => a.startsWith('furniture_')) || null;
@@ -216,7 +216,7 @@ export default function HomeScreen() {
         newFilters.priceMax = tempPriceRange[1] * 1000000;
       }
     } else if (currentFilterType === FILTER_TYPES.AREA) {
-      if (tempAreaRange[0] === 0 && tempAreaRange[1] === 100) {
+      if (tempAreaRange[0] === 0 && tempAreaRange[1] === 200) {
         delete newFilters.areaMin;
         delete newFilters.areaMax;
       } else {
@@ -258,7 +258,7 @@ export default function HomeScreen() {
     if (currentFilterType === FILTER_TYPES.PRICE) {
       setTempPriceRange([0, 30]);
     } else if (currentFilterType === FILTER_TYPES.AREA) {
-      setTempAreaRange([0, 100]);
+      setTempAreaRange([0, 200]);
     } else if (currentFilterType === FILTER_TYPES.FURNITURE) {
       setTempFurniture(null);
     } else if (currentFilterType === FILTER_TYPES.LOCATION) {
@@ -367,7 +367,7 @@ export default function HomeScreen() {
                 sliderLength={260}
                 onValuesChange={(values) => setTempAreaRange(values)}
                 min={0}
-                max={100}
+                max={200}
                 step={5}
                 allowOverlap={false}
                 snapped

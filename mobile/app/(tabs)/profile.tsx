@@ -107,7 +107,16 @@ export default function ProfileScreen() {
                             <MenuItem
                                 icon="users"
                                 label="Hồ sơ tìm bạn ở ghép"
-                                onPress={() => router.push('/find-roommate/create-profile')}
+                                onPress={() => {
+                                    if (user?.roommateProfile) {
+                                        router.push({
+                                            pathname: '/find-roommate/create-profile',
+                                            params: { mode: 'edit' }
+                                        });
+                                    } else {
+                                        router.push('/find-roommate/create-profile');
+                                    }
+                                }}
                             />
                         )}
                         <MenuItem

@@ -7,6 +7,7 @@ import {
   Body,
   Query,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
@@ -87,5 +88,17 @@ export class ChatController {
     @GetUser('id') userId: string,
   ) {
     return this.chatService.markAsRead(conversationId, userId);
+  }
+
+  @Post('messages/:id/recall')
+  @ApiOperation({ summary: 'Thu hồi tin nhắn' })
+  recallMessage(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.chatService.recallMessage(id, userId);
+  }
+
+  @Delete('messages/:id')
+  @ApiOperation({ summary: 'Xóa tin nhắn (chỉ phía người dùng)' })
+  deleteMessage(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.chatService.deleteMessage(id, userId);
   }
 }

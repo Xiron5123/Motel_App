@@ -9,8 +9,11 @@ interface User {
     email: string;
     name: string;
     phone?: string;
-    role: 'RENTER' | 'LANDLORD';
+    role: 'RENTER' | 'LANDLORD' | 'ADMIN';
     avatar?: string;
+    roommateProfile?: {
+        id: string;
+    };
 }
 
 interface AuthState {
@@ -66,7 +69,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     socketService.connect(token);
 
                     set({ user: response.data, token, isAuthenticated: true });
-                    router.replace('/(tabs)');
+                    // router.replace('/(tabs)'); // Let _layout handle navigation
                 } catch (apiError: any) {
                     if (apiError.response?.status === 401) {
                         console.log('Token expired or invalid');

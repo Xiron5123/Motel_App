@@ -36,11 +36,16 @@ export const API_URL = getBaseUrl();
 
 console.log('API URL:', API_URL); // Log for debugging
 
+import qs from 'qs';
+
 const api = axios.create({
     baseURL: API_URL,
-    timeout: 5000, // 5 seconds timeout
+    timeout: 30000, // 30 seconds timeout
     headers: {
         'Content-Type': 'application/json',
+    },
+    paramsSerializer: params => {
+        return qs.stringify(params, { arrayFormat: 'repeat' });
     },
 });
 
@@ -92,10 +97,20 @@ api.interceptors.response.use(
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
         const status = error.response?.status;
 
+        console.error(`[API Debug] Error: ${error.message}`);
+        console.error(`[API Debug] URL: ${error.config?.baseURL}${error.config?.url}`);
+        if (error.response) {
+            console.error(`[API Debug] Status: ${error.response.status}`);
+            console.error(`[API Debug] Data:`, JSON.stringify(error.response.data, null, 2));
+        }
+
         // Handle 401 Unauthorized (Token expired)
         if (status === 401 && originalRequest && !originalRequest._retry) {
+            console.error('[API Debug] 401 detected. Checking if retry is possible...');
+
             // Check if this is a refresh token request failing
             if (originalRequest.url?.includes('/auth/refresh')) {
+                console.error('[API Debug] Refresh token request failed. Logging out.');
                 // Refresh token is also invalid, logout completely
                 isRefreshing = false;
                 await SecureStore.deleteItemAsync('accessToken');
@@ -105,11 +120,13 @@ api.interceptors.response.use(
             }
 
             if (isRefreshing) {
+                console.error('[API Debug] Refresh already in progress. Queuing request.');
                 // Wait for the current refresh to complete
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
                 })
                     .then(token => {
+                        console.error('[API Debug] Processing queued request with new token.');
                         if (originalRequest.headers) {
                             originalRequest.headers.Authorization = `Bearer ${token}`;
                         }
@@ -122,25 +139,29 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
+                console.error('[API Debug] Attempting to retrieve refresh token from storage...');
                 const refreshToken = await SecureStore.getItemAsync('refreshToken');
 
                 if (!refreshToken) {
+                    console.error('[API Debug] No refresh token found in storage.');
                     throw new Error('No refresh token available');
                 }
 
-                console.log('Attempting to refresh access token...');
+                console.error('[API Debug] Refresh token found. Calling refresh endpoint...');
 
                 // Call refresh token API
                 const response = await axios.post(`${API_URL}/auth/refresh`, {
                     refreshToken
                 });
 
+                console.error('[API Debug] Refresh endpoint response status:', response.status);
+
                 const { accessToken: newAccessToken } = response.data;
 
                 // Save new access token
                 await SecureStore.setItemAsync('accessToken', newAccessToken);
 
-                console.log('Access token refreshed successfully');
+                console.error('[API Debug] Access token refreshed and saved successfully.');
 
                 // Update header with new token
                 if (originalRequest.headers) {
@@ -151,13 +172,19 @@ api.interceptors.response.use(
                 isRefreshing = false;
 
                 // Retry the original request
+                console.error('[API Debug] Retrying original request.');
                 return api(originalRequest);
-            } catch (refreshError) {
+            } catch (refreshError: any) {
+                console.error('[API Debug] Token refresh failed:', refreshError.message);
+                if (refreshError.response) {
+                    console.error('[API Debug] Refresh failure data:', JSON.stringify(refreshError.response.data, null, 2));
+                }
+
                 processQueue(refreshError, null);
                 isRefreshing = false;
 
                 // Refresh failed, logout user
-                console.log('Token refresh failed, logging out...');
+                console.error('[API Debug] Logging out due to refresh failure.');
                 await SecureStore.deleteItemAsync('accessToken');
                 await SecureStore.deleteItemAsync('refreshToken');
                 router.replace('/(auth)/login');
@@ -166,8 +193,6 @@ api.interceptors.response.use(
             }
         }
 
-        // Log other errors
-        console.error(`API Error: ${error.message} - URL: ${error.config?.baseURL}${error.config?.url}`);
         return Promise.reject(error);
     }
 );
