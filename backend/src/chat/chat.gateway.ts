@@ -35,7 +35,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
 
-    // Remove from userSockets
+    // Xóa khỏi userSockets
     for (const [userId, sockets] of this.userSockets.entries()) {
       if (sockets.has(client.id)) {
         sockets.delete(client.id);
@@ -46,7 +46,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
 
-    // Remove from typing
+    // Xóa khỏi danh sách đang gõ
     for (const [conversationId, users] of this.typingUsers.entries()) {
       const userId = this.getUserIdBySocketId(client.id);
       if (userId && users.has(userId)) {
@@ -70,7 +70,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     this.logger.log(`User ${userId} registered with socket ${client.id}`);
 
-    // Join user's conversations
+    // Tự động join vào các conversations của user
     this.joinUserConversations(userId, client);
 
     return { status: 'registered', userId };
@@ -83,7 +83,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const { conversationId } = data;
     client.join(conversationId);
-    this.logger.log(`Socket ${client.id} joined conversation ${conversationId}`);
+    this.logger.log(
+      `Socket ${client.id} joined conversation ${conversationId}`,
+    );
     return { status: 'joined', conversationId };
   }
 
@@ -101,7 +103,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('send_message')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { conversationId: string; userId: string; content: string },
+    @MessageBody()
+    data: { conversationId: string; userId: string; content: string },
   ) {
     const { conversationId, userId, content } = data;
 
@@ -112,7 +115,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         content,
       );
 
-      // Emit to all clients in the conversation
+      // Gửi tin nhắn đến tất cả clients trong conversation
       this.server.to(conversationId).emit('new_message', message);
 
       this.logger.log(`Message sent to conversation ${conversationId}`);

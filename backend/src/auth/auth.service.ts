@@ -22,10 +22,10 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,
-  ) { }
+  ) {}
 
   async register(dto: RegisterDto) {
-    // Check if user exists
+    // Kiểm tra xem người dùng đã tồn tại chưa
     const orConditions: any[] = [{ email: dto.email }];
     if (dto.phone) {
       orConditions.push({ phone: dto.phone });
@@ -41,17 +41,17 @@ export class AuthService {
       throw new ConflictException('Email or phone already registered');
     }
 
-    // Hash password
+    // Mã hóa mật khẩu
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Create user with default RENTER role
+    // Tạo người dùng với role mặc định là RENTER (Người thuê)
     const user = await this.prisma.user.create({
       data: {
         name: dto.name,
         email: dto.email,
         phone: dto.phone,
         password: hashedPassword,
-        role: 'RENTER', // Default role
+        role: 'RENTER', // Role mặc định
       },
       select: {
         id: true,
@@ -63,8 +63,12 @@ export class AuthService {
       },
     });
 
-    // Generate tokens
-    const { accessToken, refreshToken } = await this.generateTokens(user.id, user.email, user.role);
+    // Tạo access token và refresh token
+    const { accessToken, refreshToken } = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+    );
 
     return {
       user,
@@ -74,7 +78,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    // Find user
+    // Tìm người dùng theo email
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -83,7 +87,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Verify password
+    // Xác minh mật khẩu
     const passwordMatch = await bcrypt.compare(dto.password, user.password);
     if (!passwordMatch) {
       throw new UnauthorizedException('Invalid credentials');
@@ -94,7 +98,11 @@ export class AuthService {
     }
 
     // Generate tokens
-    const { accessToken, refreshToken } = await this.generateTokens(user.id, user.email, user.role);
+    const { accessToken, refreshToken } = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+    );
 
     return {
       user: {
@@ -112,32 +120,34 @@ export class AuthService {
 
   async refreshToken(token: string) {
     try {
-      // Verify refresh token
+      // Xác minh refresh token
       const payload = this.jwtService.verify<JwtPayload>(token, {
         secret: this.configService.get('REFRESH_TOKEN_SECRET'),
       });
 
-      // Check if refresh token exists in DB
+      // Kiểm tra xem refresh token có tồn tại trong database không
       const storedToken = await this.prisma.refreshToken.findFirst({
         where: {
           token,
           userId: payload.sub,
           expiresAt: { gte: new Date() },
         },
+        include: { user: true },
       });
 
       if (!storedToken) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      // Generate new tokens
-      const { accessToken, refreshToken: newRefreshToken } = await this.generateTokens(
-        payload.sub,
-        payload.email,
-        payload.role,
-      );
+      if (!storedToken.user.isActive) {
+        throw new ForbiddenException('Account is locked');
+      }
 
-      // Delete old refresh token
+      // Tạo tokens mới
+      const { accessToken, refreshToken: newRefreshToken } =
+        await this.generateTokens(payload.sub, payload.email, payload.role);
+
+      // Xóa refresh token cũ
       await this.prisma.refreshToken.delete({
         where: { id: storedToken.id },
       });
@@ -181,8 +191,8 @@ export class AuthService {
       }),
     ]);
 
-    // Store refresh token
-    const expiresInDays = 7; // 7 days
+    // Lưu refresh token vào database
+    const expiresInDays = 7; // 7 ngày
     await this.prisma.refreshToken.create({
       data: {
         userId,
@@ -197,13 +207,17 @@ export class AuthService {
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      return { message: 'If this email is registered, a reset link has been sent' };
+      return {
+        message: 'If this email is registered, a reset link has been sent',
+      };
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = await bcrypt.hash(resetToken, 10);
 
-    await this.prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+    await this.prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id },
+    });
     await this.prisma.passwordResetToken.create({
       data: {
         userId: user.id,
@@ -218,7 +232,9 @@ export class AuthService {
       console.error('Failed to send password reset email:', error);
     }
 
-    return { message: 'If this email is registered, a reset link has been sent' };
+    return {
+      message: 'If this email is registered, a reset link has been sent',
+    };
   }
 
   async resetPassword(token: string, newPassword: string) {
@@ -227,7 +243,7 @@ export class AuthService {
       include: { user: true },
     });
 
-    let validToken: typeof resetTokens[0] | null = null;
+    let validToken: (typeof resetTokens)[0] | null = null;
     for (const rt of resetTokens) {
       const isValid = await bcrypt.compare(token, rt.token);
       if (isValid) {
@@ -246,8 +262,12 @@ export class AuthService {
       data: { password: hashedPassword },
     });
 
-    await this.prisma.passwordResetToken.delete({ where: { id: validToken.id } });
-    await this.prisma.refreshToken.deleteMany({ where: { userId: validToken.userId } });
+    await this.prisma.passwordResetToken.delete({
+      where: { id: validToken.id },
+    });
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId: validToken.userId },
+    });
 
     return { message: 'Password reset successfully' };
   }
@@ -288,7 +308,7 @@ export class AuthService {
       throw new UnauthorizedException('No valid OTP found for this email');
     }
 
-    let validOTP: typeof otpRecords[0] | null = null;
+    let validOTP: (typeof otpRecords)[0] | null = null;
     for (const record of otpRecords) {
       const isValid = await bcrypt.compare(otp, record.otp);
       if (isValid) {
@@ -309,11 +329,20 @@ export class AuthService {
     return { message: 'OTP verified successfully', verified: true };
   }
 
-  async socialLogin(profile: { email: string; name: string; avatar?: string; provider: string }) {
+  async socialLogin(profile: {
+    email: string;
+    name: string;
+    avatar?: string;
+    provider: string;
+  }) {
     // Find user by email
     let user = await this.prisma.user.findUnique({
       where: { email: profile.email },
     });
+
+    if (user && !user.isActive) {
+      throw new ForbiddenException('Account is locked');
+    }
 
     if (!user) {
       // Create new user with random password (won't be used for social login)

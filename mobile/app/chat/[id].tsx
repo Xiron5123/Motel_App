@@ -15,6 +15,8 @@ import { BackButton } from '../../src/components/ui/BackButton';
 import { TypingIndicator } from '../../src/components/ui/TypingIndicator';
 import { ReportModal } from '../../src/components/ReportModal';
 import { MessageOptionsModal } from '../../src/components/MessageOptionsModal';
+import { Modal as AlertModal } from '../../src/components/ui/Modal';
+import { Button } from '../../src/components/ui/Button';
 import { theme } from '../../src/theme';
 import api from '../../src/services/api';
 import { useAuthStore } from '../../src/store/authStore';
@@ -193,6 +195,9 @@ export default function ChatDetailScreen() {
         }
     };
 
+    const [errorModalVisible, setErrorModalVisible] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+
     const handleSend = async (imageUrl?: string) => {
         const content = inputText.trim();
         if ((!content && !imageUrl) || !id) return;
@@ -204,9 +209,15 @@ export default function ChatDetailScreen() {
 
         try {
             await api.post(`/chat/conversations/${id}/messages`, { content, imageUrl });
-        } catch (error) {
-            console.error('Failed to send message:', error);
-            Alert.alert('Lỗi', 'Không thể gửi tin nhắn');
+        } catch (error: any) {
+            if (error.response?.status === 403) {
+                // Suppress console error for expected 403 (User Locked)
+                setErrorMessage(error.response?.data?.message || 'Người dùng tạm thời bị khoá');
+                setErrorModalVisible(true);
+            } else {
+                console.error('Failed to send message:', error);
+                Alert.alert('Lỗi', error.response?.data?.message || 'Không thể gửi tin nhắn');
+            }
         }
     };
 
@@ -623,6 +634,30 @@ export default function ChatDetailScreen() {
                     }
                 }}
             />
+            {/* Error Modal */}
+            <AlertModal
+                visible={errorModalVisible}
+                onClose={() => {
+                    setErrorModalVisible(false);
+                    router.back();
+                }}
+                title="Thông báo"
+                footer={
+                    <Button
+                        title="Quay lại"
+                        onPress={() => {
+                            setErrorModalVisible(false);
+                            router.back();
+                        }}
+                        variant="primary"
+                        style={{ width: '100%' }}
+                    />
+                }
+            >
+                <Typography variant="body" style={{ textAlign: 'center' }}>
+                    {errorMessage}
+                </Typography>
+            </AlertModal>
         </SafeAreaView>
     );
 }

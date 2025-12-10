@@ -65,19 +65,21 @@ export default function ForgotPasswordScreen() {
                         Link sẽ hết hạn sau 1 giờ
                     </Typography>
 
-                    <Button
-                        title="Quay lại Đăng nhập"
-                        onPress={() => router.replace('/(auth)/login')}
-                        variant="primary"
-                        style={styles.button}
-                    />
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Quay lại Đăng nhập"
+                            onPress={() => router.replace('/(auth)/login')}
+                            variant="primary"
+                        />
+                    </View>
 
-                    <Button
-                        title="Gửi lại email"
-                        onPress={() => setEmailSent(false)}
-                        variant="secondary"
-                        style={styles.button}
-                    />
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Gửi lại email"
+                            onPress={() => setEmailSent(false)}
+                            variant="secondary"
+                        />
+                    </View>
                 </View>
             </SafeAreaView>
         );
@@ -114,20 +116,22 @@ export default function ForgotPasswordScreen() {
                         autoComplete="email"
                     />
 
-                    <Button
-                        title="Gửi link đặt lại"
-                        onPress={handleSubmit}
-                        loading={loading}
-                        variant="primary"
-                        style={styles.button}
-                    />
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Gửi link đặt lại"
+                            onPress={handleSubmit}
+                            loading={loading}
+                            variant="primary"
+                        />
+                    </View>
 
-                    <Button
-                        title="Quay lại Đăng nhập"
-                        onPress={() => router.back()}
-                        variant="secondary"
-                        style={styles.button}
-                    />
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Quay lại Đăng nhập"
+                            onPress={() => router.back()}
+                            variant="secondary"
+                        />
+                    </View>
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -170,7 +174,7 @@ const styles = StyleSheet.create({
     form: {
         width: '100%',
     },
-    button: {
+    buttonContainer: {
         marginTop: 16,
     },
     successContainer: {

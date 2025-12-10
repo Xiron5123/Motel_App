@@ -1,43 +1,52 @@
-import { IsString, IsInt, IsEnum, IsNumber, IsOptional, IsArray, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsInt,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsArray,
+  Min,
+  Max,
+} from 'class-validator';
 import { Gender } from '@prisma/client';
 
 export class CreateRoommateDto {
-    @IsString()
-    name: string;
+  @IsString()
+  name: string;
 
-    @IsInt()
-    @Min(18)
-    age: number;
+  @IsInt()
+  @Min(18)
+  age: number;
 
-    @IsEnum(Gender)
-    gender: Gender;
+  @IsEnum(Gender)
+  gender: Gender;
 
-    @IsString()
-    job: string;
+  @IsString()
+  job: string;
 
-    @IsNumber()
-    budgetMin: number;
+  @IsNumber()
+  budgetMin: number;
 
-    @IsNumber()
-    budgetMax: number;
+  @IsNumber()
+  budgetMax: number;
 
-    @IsString()
-    location: string;
+  @IsString()
+  location: string;
 
-    @IsOptional()
-    @IsString()
-    intro?: string;
+  @IsOptional()
+  @IsString()
+  intro?: string;
 
-    @IsOptional()
-    @IsString()
-    avatar?: string;
+  @IsOptional()
+  @IsString()
+  avatar?: string;
 
-    @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    habits?: string[];
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  habits?: string[];
 
-    @IsOptional()
-    @IsEnum(['STUDENT', 'WORKER', 'OTHER'])
-    occupation?: 'STUDENT' | 'WORKER' | 'OTHER';
+  @IsOptional()
+  @IsEnum(['STUDENT', 'WORKER', 'OTHER'])
+  occupation?: 'STUDENT' | 'WORKER' | 'OTHER';
 }

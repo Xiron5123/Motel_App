@@ -75,7 +75,7 @@ export default function MyListingsScreen() {
                     title="Sửa"
                     variant="outline"
                     size="small"
-                    onPress={() => router.push(`/post-listing?id=${item.id}`)} // Assuming post-listing handles edit
+                    onPress={() => router.push(`/listing/edit/${item.id}`)}
                     style={{ flex: 1, marginRight: 8 }}
                     icon={<Feather name="edit-2" size={14} color="black" />}
                 />

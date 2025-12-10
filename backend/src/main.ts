@@ -44,7 +44,8 @@ async function bootstrap() {
       '- Realtime chat với Socket.IO\n' +
       '- Notifications\n\n' +
       '**Rate Limiting:** 100 requests/minute\n' +
-      '**Environment:** ' + (process.env.NODE_ENV || 'development'),
+      '**Environment:** ' +
+      (process.env.NODE_ENV || 'development'),
     )
     .setVersion('1.0.0')
     .addBearerAuth(
@@ -65,6 +66,8 @@ async function bootstrap() {
     .addTag('Bookings', 'Quản lý yêu cầu đặt phòng')
     .addTag('Chat', 'Nhắn tin realtime')
     .addTag('Notifications', 'Thông báo')
+    .addTag('Roommates', 'Tìm người ở ghép')
+    .addTag('Upload', 'Tải lên tập tin')
     .build();
 
   const document = SwaggerModule.createDocument(app, config, {

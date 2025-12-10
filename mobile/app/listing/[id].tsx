@@ -41,13 +41,14 @@ export default function ListingDetailScreen() {
     const [showBookingModal, setShowBookingModal] = useState(false);
     const insets = useSafeAreaInsets();
 
-    const { data: listing, isLoading } = useQuery({
+    const { data: listing, isLoading, error } = useQuery({
         queryKey: ['listing', id],
         queryFn: async () => {
             const response = await api.get(`/listings/${id}`);
             return response.data;
         },
         enabled: !!id,
+        retry: false,
     });
 
     const checkFavoriteStatus = async () => {
@@ -115,11 +116,26 @@ export default function ListingDetailScreen() {
         );
     }
 
-    if (!listing) {
+    // Handle error or missing listing
+    if (!listing || error) {
         return (
-            <View style={styles.loading}>
-                <Typography variant="body">Không tìm thấy tin đăng</Typography>
-            </View>
+            <SafeAreaView style={styles.container}>
+                <Stack.Screen options={{ headerShown: false }} />
+                <View style={styles.errorContainer}>
+                    <MaterialCommunityIcons name="alert-circle-outline" size={64} color={theme.colors.textSecondary} />
+                    <Typography variant="h3" style={styles.errorTitle}>Tin đăng không tồn tại</Typography>
+                    <Typography variant="body" style={styles.errorText}>
+                        Tin đăng này có thể đã bị gỡ hoặc tài khoản chủ trọ đang bị khóa.
+                    </Typography>
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="Quay lại"
+                            onPress={() => router.back()}
+                            variant="primary"
+                        />
+                    </View>
+                </View>
+            </SafeAreaView>
         );
     }
 
@@ -647,5 +663,25 @@ const styles = StyleSheet.create({
         right: 20,
         zIndex: 10,
         padding: 10,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorTitle: {
+        marginTop: 16,
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    errorText: {
+        color: theme.colors.textSecondary,
+        textAlign: 'center',
+        marginBottom: 24,
+    },
+    buttonContainer: {
+        marginTop: 16,
+        minWidth: 200,
     },
 });

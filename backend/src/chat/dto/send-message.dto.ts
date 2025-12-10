@@ -2,7 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 
 export class SendMessageDto {
-  @ApiProperty({ example: 'Xin chào, phòng này còn trống không?', required: false })
+  @ApiProperty({
+    example: 'Xin chào, phòng này còn trống không?',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   content?: string;
@@ -12,7 +15,11 @@ export class SendMessageDto {
   @IsOptional()
   imageUrl?: string;
 
-  @ApiProperty({ example: 'clxxxx', description: 'Listing ID to attach to message', required: false })
+  @ApiProperty({
+    example: 'clxxxx',
+    description: 'Listing ID to attach to message',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   listingId?: string;

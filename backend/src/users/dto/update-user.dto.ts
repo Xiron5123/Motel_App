@@ -22,7 +22,11 @@ export class UpdateUserDto {
   @IsOptional()
   avatar?: string;
 
-  @ApiProperty({ example: 'RENTER', enum: ['RENTER', 'LANDLORD', 'ADMIN'], required: false })
+  @ApiProperty({
+    example: 'RENTER',
+    enum: ['RENTER', 'LANDLORD', 'ADMIN'],
+    required: false,
+  })
   @IsOptional()
   role?: 'RENTER' | 'LANDLORD' | 'ADMIN';
 

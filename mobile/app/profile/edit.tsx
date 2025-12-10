@@ -53,7 +53,11 @@ export default function EditProfileScreen() {
             });
 
             const token = await SecureStore.getItemAsync('accessToken');
-            const response = await fetch(`${api.defaults.baseURL}/upload`, {
+            const uploadUrl = `${api.defaults.baseURL}/upload`;
+            console.log('[Upload] Starting upload to:', uploadUrl);
+            console.log('[Upload] Token exists:', !!token);
+
+            const response = await fetch(uploadUrl, {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -62,15 +66,33 @@ export default function EditProfileScreen() {
                 },
             });
 
+            console.log('[Upload] Response status:', response.status);
+
             if (!response.ok) {
-                throw new Error('Upload failed');
+                const errorText = await response.text();
+                console.log('[Upload] Error response:', errorText);
+                throw new Error(`Upload failed: ${response.status}`);
             }
 
             const data = await response.json();
+            console.log('[Upload] Success, URL:', data.url);
             setAvatar(data.url);
-        } catch (error) {
-            console.error('Upload error:', error);
-            Alert.alert('Lỗi', 'Không thể tải ảnh lên');
+        } catch (error: any) {
+            console.error('[Upload] Error:', error);
+            // Phân biệt lỗi network và lỗi server
+            if (error.message?.includes('Network request failed')) {
+                Alert.alert(
+                    'Lỗi kết nối',
+                    'Không thể kết nối đến máy chủ. Vui lòng kiểm tra:\n\n' +
+                    '1. Backend server đang chạy\n' +
+                    '2. Địa chỉ IP trong api.ts đúng\n' +
+                    '3. Điện thoại và máy tính cùng mạng WiFi'
+                );
+            } else if (error.message?.includes('401')) {
+                Alert.alert('Lỗi', 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+            } else {
+                Alert.alert('Lỗi', 'Không thể tải ảnh lên. Vui lòng thử lại.');
+            }
         } finally {
             setIsUploading(false);
         }

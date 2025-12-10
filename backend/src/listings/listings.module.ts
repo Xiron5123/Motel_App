@@ -4,6 +4,6 @@ import { ListingsController } from './listings.controller';
 
 @Module({
   providers: [ListingsService],
-  controllers: [ListingsController]
+  controllers: [ListingsController],
 })
 export class ListingsModule {}

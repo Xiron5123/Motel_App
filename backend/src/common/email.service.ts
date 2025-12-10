@@ -18,7 +18,9 @@ export class EmailService {
 
   async sendPasswordResetEmail(email: string, resetToken: string) {
     const resetUrl = `motelapp://reset-password?token=${resetToken}`;
-    const emailFrom = this.configService.get('EMAIL_FROM') || this.configService.get('EMAIL_USER');
+    const emailFrom =
+      this.configService.get('EMAIL_FROM') ||
+      this.configService.get('EMAIL_USER');
 
     try {
       await this.transporter.sendMail({
@@ -122,7 +124,9 @@ export class EmailService {
   }
 
   async sendOTPEmail(email: string, otp: string) {
-    const emailFrom = this.configService.get('EMAIL_FROM') || this.configService.get('EMAIL_USER');
+    const emailFrom =
+      this.configService.get('EMAIL_FROM') ||
+      this.configService.get('EMAIL_USER');
 
     try {
       await this.transporter.sendMail({

@@ -1,0 +1,16 @@
+# Ignore build outputs
+dist/
+build/
+node_modules/
+coverage/
+
+# Ignore uploads folder (user uploaded images)
+uploads/
+
+# Ignore environment files
+.env
+.env.local
+.env.*.local
+
+# Ignore prisma migrations (auto-generated)
+prisma/migrations/

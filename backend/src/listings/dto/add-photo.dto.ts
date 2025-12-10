@@ -1,8 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsOptional, Min } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Min,
+} from 'class-validator';
 
 export class AddPhotoDto {
-  @ApiProperty({ example: 'https://res.cloudinary.com/demo/image/upload/sample.jpg' })
+  @ApiProperty({
+    example: 'https://res.cloudinary.com/demo/image/upload/sample.jpg',
+  })
   @IsString()
   @IsNotEmpty()
   url: string;

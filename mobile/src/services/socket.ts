@@ -29,7 +29,7 @@ class SocketService {
             auth: {
                 token: `Bearer ${token}`,
             },
-            transports: ['websocket'],
+            transports: ['polling', 'websocket'],
             autoConnect: true,
         });
 

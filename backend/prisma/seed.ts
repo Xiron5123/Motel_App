@@ -5,9 +5,9 @@ import { faker } from '@faker-js/faker';
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('Start seeding...');
+    console.log('Bắt đầu tạo dữ liệu mẫu...');
 
-    // 1. Create Admin (if not exists)
+    // 1. Tạo Admin (nếu chưa tồn tại)
     const adminEmail = 'admin@xmotelr.com';
     const adminPassword = await bcrypt.hash('admin123', 10);
 
@@ -28,9 +28,9 @@ async function main() {
         },
     });
 
-    console.log('Admin created/verified.');
+    console.log('Đã tạo/xác minh Admin.');
 
-    // Helper for Vietnamese Names
+    // Helper tạo tên tiếng Việt
     const lastNames = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'Phan', 'Vũ', 'Võ', 'Đặng', 'Bùi', 'Đỗ', 'Hồ', 'Ngô', 'Dương', 'Lý'];
     const middleNames = ['Văn', 'Thị', 'Minh', 'Thanh', 'Đức', 'Hồng', 'Quang', 'Kim', 'Hoài', 'Ngọc'];
     const firstNames = ['Anh', 'Bình', 'Châu', 'Dũng', 'Em', 'Giang', 'Hà', 'Hải', 'Hiếu', 'Hòa', 'Hùng', 'Huy', 'Khánh', 'Lan', 'Linh', 'Long', 'Mai', 'Minh', 'Nam', 'Nga', 'Nhi', 'Nhung', 'Phúc', 'Quân', 'Quỳnh', 'Sơn', 'Thảo', 'Thắng', 'Thủy', 'Trang', 'Trung', 'Tú', 'Tùng', 'Vân', 'Việt', 'Yến'];
@@ -42,7 +42,7 @@ async function main() {
         return `${last} ${middle} ${first}`;
     };
 
-    // Locations Data
+    // Dữ liệu vị trí
     const locations = [
         {
             city: 'Hồ Chí Minh',
@@ -58,13 +58,13 @@ async function main() {
         }
     ];
 
-    // Furniture Options
+    // Tùy chọn nội thất
     const furnitureOptions = ['furniture_full', 'furniture_basic', 'furniture_empty'];
 
-    // 2. Create Landlords and Listings
+    // 2. Tạo chủ trọ và tin đăng
     for (let i = 0; i < 10; i++) {
         const name = generateVietnameseName();
-        // Create email from name (remove accents and spaces)
+        // Tạo email từ tên (bỏ dấu và khoảng trắng)
         const emailName = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, '.');
         const email = `${emailName}.${Math.floor(Math.random() * 1000)}@example.com`;
         const password = await bcrypt.hash('123456', 10);
@@ -81,15 +81,15 @@ async function main() {
             },
         });
 
-        // Create Listings for this landlord
-        const numListings = Math.floor(Math.random() * 5) + 2; // 2-6 listings
+        // Tạo tin đăng cho chủ trọ này
+        const numListings = Math.floor(Math.random() * 5) + 2; // 2-6 tin đăng
         for (let j = 0; j < numListings; j++) {
             const location = locations[Math.floor(Math.random() * locations.length)];
             const district = location.districts[Math.floor(Math.random() * location.districts.length)];
             const price = parseFloat(faker.commerce.price({ min: 2000000, max: 15000000 }));
             const area = faker.number.float({ min: 15, max: 60, fractionDigits: 1 });
 
-            // Determine furniture
+            // Xác định nội thất
             const furnitureType = furnitureOptions[Math.floor(Math.random() * furnitureOptions.length)];
             const amenities = ['Wifi', 'Chỗ để xe'];
             if (furnitureType === 'furniture_full') {
@@ -100,7 +100,7 @@ async function main() {
                 amenities.push('furniture_empty');
             }
 
-            // Randomly add other amenities
+            // Thêm ngẫu nhiên các tiện ích khác
             if (Math.random() > 0.5) amenities.push('Ban công');
             if (Math.random() > 0.5) amenities.push('Thang máy');
             if (Math.random() > 0.5) amenities.push('Bảo vệ 24/7');
@@ -113,7 +113,7 @@ async function main() {
                     price: price,
                     deposit: price,
                     area: area,
-                    address: `${faker.number.int({ min: 1, max: 999 })} đường ${faker.person.lastName()}`, // Fake street name roughly
+                    address: `${faker.number.int({ min: 1, max: 999 })} đường ${faker.person.lastName()}`, // Tên đường giả lập
                     city: location.city,
                     district: district,
                     ward: 'Phường X',
@@ -130,9 +130,9 @@ async function main() {
             });
         }
     }
-    console.log('Landlords and Listings created.');
+    console.log('Đã tạo chủ trọ và tin đăng.');
 
-    // 3. Create Renters and Roommate Profiles
+    // 3. Tạo người thuê và hồ sơ tìm bạn cùng phòng
     const jobs = ['Sinh viên', 'Nhân viên văn phòng', 'Lập trình viên', 'Kế toán', 'Marketing', 'Giáo viên', 'Bác sĩ', 'Kỹ sư', 'Designer', 'Freelancer'];
     const intros = [
         'Mình là người hòa đồng, vui vẻ, sạch sẽ.',
@@ -158,12 +158,12 @@ async function main() {
                 name,
                 role: 'RENTER',
                 phone: faker.phone.number(),
-                isActive: Math.random() > 0.05, // 5% chance of being locked
+                isActive: Math.random() > 0.05, // 5% khả năng bị khóa
                 avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=128`,
             },
         });
 
-        // Create Roommate Profile for some renters (60%)
+        // Tạo hồ sơ roommate cho một số người thuê (60%)
         if (Math.random() > 0.4) {
             const location = locations[Math.floor(Math.random() * locations.length)];
             const district = location.districts[Math.floor(Math.random() * location.districts.length)];
@@ -185,8 +185,8 @@ async function main() {
             });
         }
     }
-    console.log('Renters and Roommate Profiles created.');
-    console.log('Seeding finished.');
+    console.log('Đã tạo người thuê và hồ sơ roommate.');
+    console.log('Hoàn tất tạo dữ liệu mẫu.');
 }
 
 main()

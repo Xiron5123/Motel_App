@@ -9,7 +9,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { ListingsService } from './listings.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
@@ -24,7 +29,7 @@ import { Role } from '@prisma/client';
 @ApiTags('Listings')
 @Controller('listings')
 export class ListingsController {
-  constructor(private listingsService: ListingsService) { }
+  constructor(private listingsService: ListingsService) {}
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách phòng trọ với bộ lọc' })
@@ -66,7 +71,11 @@ export class ListingsController {
   @Roles(Role.LANDLORD)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cập nhật tin đăng (chủ trọ)' })
-  update(@Param('id') id: string, @CurrentUser() user: any, @Body() dto: UpdateListingDto) {
+  update(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+    @Body() dto: UpdateListingDto,
+  ) {
     return this.listingsService.update(id, user.id, dto);
   }
 
@@ -93,7 +102,11 @@ export class ListingsController {
   @Roles(Role.LANDLORD)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Thêm ảnh vào tin đăng' })
-  addPhoto(@Param('id') id: string, @CurrentUser() user: any, @Body() dto: AddPhotoDto) {
+  addPhoto(
+    @Param('id') id: string,
+    @CurrentUser() user: any,
+    @Body() dto: AddPhotoDto,
+  ) {
     return this.listingsService.addPhoto(id, user.id, dto);
   }
 

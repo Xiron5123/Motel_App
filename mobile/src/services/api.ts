@@ -5,7 +5,8 @@ import { Platform } from 'react-native';
 import { router } from 'expo-router';
 
 const getBaseUrl = () => {
-    // Hardcoded IP as requested
+    // ⚠️ QUAN TRỌNG: Kiểm tra IP của máy backend (chạy `ipconfig` trên Windows)
+    // Thay đổi IP này thành IP máy tính đang chạy backend
     return 'http://192.168.0.2:3000';
 
     // Original logic preserved below for reference but disabled
@@ -97,20 +98,21 @@ api.interceptors.response.use(
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
         const status = error.response?.status;
 
-        console.error(`[API Debug] Error: ${error.message}`);
-        console.error(`[API Debug] URL: ${error.config?.baseURL}${error.config?.url}`);
+        // Use console.log instead of console.error to avoid noisy stack traces in Expo
+        console.log(`[API Debug] Error: ${error.message}`);
+        console.log(`[API Debug] URL: ${error.config?.baseURL}${error.config?.url}`);
         if (error.response) {
-            console.error(`[API Debug] Status: ${error.response.status}`);
-            console.error(`[API Debug] Data:`, JSON.stringify(error.response.data, null, 2));
+            console.log(`[API Debug] Status: ${error.response.status}`);
+            // console.log(`[API Debug] Data:`, JSON.stringify(error.response.data, null, 2)); // Commented out to reduce noise
         }
 
         // Handle 401 Unauthorized (Token expired)
         if (status === 401 && originalRequest && !originalRequest._retry) {
-            console.error('[API Debug] 401 detected. Checking if retry is possible...');
+            console.log('[API Debug] 401 detected. Checking if retry is possible...');
 
             // Check if this is a refresh token request failing
             if (originalRequest.url?.includes('/auth/refresh')) {
-                console.error('[API Debug] Refresh token request failed. Logging out.');
+                console.log('[API Debug] Refresh token request failed. Logging out.');
                 // Refresh token is also invalid, logout completely
                 isRefreshing = false;
                 await SecureStore.deleteItemAsync('accessToken');
@@ -120,13 +122,13 @@ api.interceptors.response.use(
             }
 
             if (isRefreshing) {
-                console.error('[API Debug] Refresh already in progress. Queuing request.');
+                console.log('[API Debug] Refresh already in progress. Queuing request.');
                 // Wait for the current refresh to complete
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
                 })
                     .then(token => {
-                        console.error('[API Debug] Processing queued request with new token.');
+                        console.log('[API Debug] Processing queued request with new token.');
                         if (originalRequest.headers) {
                             originalRequest.headers.Authorization = `Bearer ${token}`;
                         }
@@ -139,29 +141,29 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                console.error('[API Debug] Attempting to retrieve refresh token from storage...');
+                console.log('[API Debug] Attempting to retrieve refresh token from storage...');
                 const refreshToken = await SecureStore.getItemAsync('refreshToken');
 
                 if (!refreshToken) {
-                    console.error('[API Debug] No refresh token found in storage.');
+                    console.log('[API Debug] No refresh token found in storage.');
                     throw new Error('No refresh token available');
                 }
 
-                console.error('[API Debug] Refresh token found. Calling refresh endpoint...');
+                console.log('[API Debug] Refresh token found. Calling refresh endpoint...');
 
                 // Call refresh token API
                 const response = await axios.post(`${API_URL}/auth/refresh`, {
                     refreshToken
                 });
 
-                console.error('[API Debug] Refresh endpoint response status:', response.status);
+                console.log('[API Debug] Refresh endpoint response status:', response.status);
 
                 const { accessToken: newAccessToken } = response.data;
 
                 // Save new access token
                 await SecureStore.setItemAsync('accessToken', newAccessToken);
 
-                console.error('[API Debug] Access token refreshed and saved successfully.');
+                console.log('[API Debug] Access token refreshed and saved successfully.');
 
                 // Update header with new token
                 if (originalRequest.headers) {
@@ -172,19 +174,19 @@ api.interceptors.response.use(
                 isRefreshing = false;
 
                 // Retry the original request
-                console.error('[API Debug] Retrying original request.');
+                console.log('[API Debug] Retrying original request.');
                 return api(originalRequest);
             } catch (refreshError: any) {
-                console.error('[API Debug] Token refresh failed:', refreshError.message);
+                console.log('[API Debug] Token refresh failed:', refreshError.message);
                 if (refreshError.response) {
-                    console.error('[API Debug] Refresh failure data:', JSON.stringify(refreshError.response.data, null, 2));
+                    // console.log('[API Debug] Refresh failure data:', JSON.stringify(refreshError.response.data, null, 2));
                 }
 
                 processQueue(refreshError, null);
                 isRefreshing = false;
 
                 // Refresh failed, logout user
-                console.error('[API Debug] Logging out due to refresh failure.');
+                console.log('[API Debug] Logging out due to refresh failure.');
                 await SecureStore.deleteItemAsync('accessToken');
                 await SecureStore.deleteItemAsync('refreshToken');
                 router.replace('/(auth)/login');

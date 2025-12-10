@@ -6,17 +6,17 @@ import { extname, join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 @Module({
-    imports: [
-        MulterModule.register({
-            storage: diskStorage({
-                destination: './uploads',
-                filename: (req, file, cb) => {
-                    const randomName = uuidv4();
-                    cb(null, `${randomName}${extname(file.originalname)}`);
-                },
-            }),
-        }),
-    ],
-    controllers: [UploadController],
+  imports: [
+    MulterModule.register({
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const randomName = uuidv4();
+          cb(null, `${randomName}${extname(file.originalname)}`);
+        },
+      }),
+    }),
+  ],
+  controllers: [UploadController],
 })
-export class UploadModule { }
+export class UploadModule {}

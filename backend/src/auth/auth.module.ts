@@ -32,4 +32,4 @@ import { EmailService } from '../common/email.service';
   ],
   exports: [AuthService],
 })
-export class AuthModule { }
+export class AuthModule {}

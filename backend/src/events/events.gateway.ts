@@ -14,8 +14,7 @@ import { Logger } from '@nestjs/common';
     credentials: true,
   },
 })
-export class EventsGateway
-  implements OnGatewayConnection, OnGatewayDisconnect {
+export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -84,13 +83,17 @@ export class EventsGateway
   @SubscribeMessage('join_conversation')
   handleJoinConversation(client: Socket, payload: { conversationId: string }) {
     client.join(payload.conversationId);
-    this.logger.log(`Client ${client.id} joined conversation ${payload.conversationId}`);
+    this.logger.log(
+      `Client ${client.id} joined conversation ${payload.conversationId}`,
+    );
   }
 
   @SubscribeMessage('leave_conversation')
   handleLeaveConversation(client: Socket, payload: { conversationId: string }) {
     client.leave(payload.conversationId);
-    this.logger.log(`Client ${client.id} left conversation ${payload.conversationId}`);
+    this.logger.log(
+      `Client ${client.id} left conversation ${payload.conversationId}`,
+    );
   }
 
   emitToRoom(roomId: string, event: string, data: any) {

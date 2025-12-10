@@ -7,7 +7,11 @@ export class CreateConversationDto {
   @IsNotEmpty()
   participantId: string;
 
-  @ApiProperty({ example: 'clyyy456', description: 'ID của listing (optional)', required: false })
+  @ApiProperty({
+    example: 'clyyy456',
+    description: 'ID của listing (optional)',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   listingId?: string;

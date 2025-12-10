@@ -12,11 +12,11 @@ import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 @Roles(Role.ADMIN)
 @Controller('dashboard')
 export class DashboardController {
-    constructor(private readonly dashboardService: DashboardService) { }
+  constructor(private readonly dashboardService: DashboardService) {}
 
-    @Get('stats')
-    @ApiOperation({ summary: 'Get dashboard statistics' })
-    getStats() {
-        return this.dashboardService.getStats();
-    }
+  @Get('stats')
+  @ApiOperation({ summary: 'Get dashboard statistics' })
+  getStats() {
+    return this.dashboardService.getStats();
+  }
 }

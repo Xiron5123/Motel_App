@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
@@ -7,7 +11,7 @@ import { AddPhotoDto } from './dto/add-photo.dto';
 
 @Injectable()
 export class ListingsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(landlordId: string, dto: CreateListingDto) {
     const listing = await this.prisma.listing.create({
@@ -28,8 +32,10 @@ export class ListingsService {
       },
     });
 
-    // Auto-upgrade RENTER to LANDLORD
-    const user = await this.prisma.user.findUnique({ where: { id: landlordId } });
+    // Tự động nâng cấp từ RENTER lên LANDLORD khi đăng tin
+    const user = await this.prisma.user.findUnique({
+      where: { id: landlordId },
+    });
     if (user && user.role === 'RENTER') {
       await this.prisma.user.update({
         where: { id: landlordId },
@@ -41,15 +47,30 @@ export class ListingsService {
   }
 
   async findAll(query: QueryListingDto) {
-    const { q, priceMin, priceMax, areaMin, areaMax, amenities, lat, lng, radius, status, sortBy, page = 1, limit = 10, city, district } = query;
+    const {
+      q,
+      priceMin,
+      priceMax,
+      areaMin,
+      areaMax,
+      amenities,
+      lat,
+      lng,
+      radius,
+      status,
+      sortBy,
+      page = 1,
+      limit = 10,
+      city,
+      district,
+    } = query;
 
     const skip = (page - 1) * limit;
 
-    // Build where clause
+    // Xây dựng điều kiện WHERE cho tìm kiếm
     const where: any = {};
 
-    // Text search
-    // Text search (Split by words for better results)
+    // Tìm kiếm văn bản (Tách thành từng từ để kết quả tốt hơn)
     if (q) {
       const searchTerms = q.trim().split(/\s+/);
       where.AND = searchTerms.map((term) => ({
@@ -61,7 +82,7 @@ export class ListingsService {
       }));
     }
 
-    // Location filter (City/District)
+    // Lọc theo vị trí (Thành phố/Quận)
     if (query.city) {
       where.city = { contains: query.city, mode: 'insensitive' };
     }
@@ -69,37 +90,42 @@ export class ListingsService {
       where.district = { contains: query.district, mode: 'insensitive' };
     }
 
-    // Price range
+    // Khoảng giá
     if (priceMin !== undefined || priceMax !== undefined) {
       where.price = {};
       if (priceMin !== undefined) where.price.gte = priceMin;
       if (priceMax !== undefined) where.price.lte = priceMax;
     }
 
-    // Area range
+    // Khoảng diện tích
     if (areaMin !== undefined || areaMax !== undefined) {
       where.area = {};
       if (areaMin !== undefined) where.area.gte = areaMin;
       if (areaMax !== undefined) where.area.lte = areaMax;
     }
 
-    // Amenities filter
+    // Lọc theo tiện ích
     if (amenities && amenities.length > 0) {
       where.amenities = {
         hasEvery: amenities,
       };
     }
 
-    // Status filter
+    // Lọc theo trạng thái
     if (status) {
       where.status = status;
     } else {
-      // Default: only show AVAILABLE listings
+      // Mặc định: chỉ hiển thị các tin đang AVAILABLE (Sẵn có)
       where.status = 'AVAILABLE';
     }
 
-    // Determine sort order
-    let orderBy: any = { createdAt: 'desc' }; // Default
+    // Lọc ra các tin từ chủ trọ bị khóa (users không hoạt động)
+    where.landlord = {
+      isActive: true,
+    };
+
+    // Xác định thứ tự sắp xếp
+    let orderBy: any = { createdAt: 'desc' }; // Mặc định
     if (sortBy === 'price_asc') {
       orderBy = { price: 'asc' };
     } else if (sortBy === 'price_desc') {
@@ -109,9 +135,9 @@ export class ListingsService {
     } else if (sortBy === 'created_desc') {
       orderBy = { createdAt: 'desc' };
     }
-    // Note: distance sorting done after query if lat/lng provided
+    // Lưu ý: Sắp xếp theo khoảng cách sẽ thực hiện sau khi query nếu có lat/lng
 
-    // Get listings
+    // Lấy danh sách tin đăng
     const [listings, total] = await Promise.all([
       this.prisma.listing.findMany({
         where,
@@ -140,25 +166,28 @@ export class ListingsService {
       this.prisma.listing.count({ where }),
     ]);
 
-    // Apply geo filter if provided (Haversine distance)
+    // Áp dụng lọc theo vị trí GPS nếu có (khoảng cách Haversine)
     let filteredListings = listings;
     if (lat !== undefined && lng !== undefined) {
-      // Calculate distance for each listing
+      // Tính khoảng cách cho mỗi tin đăng
       filteredListings = listings
         .map((listing) => ({
           ...listing,
-          distance: listing.lat && listing.lng
-            ? this.calculateDistance(lat, lng, listing.lat, listing.lng)
-            : null,
+          distance:
+            listing.lat && listing.lng
+              ? this.calculateDistance(lat, lng, listing.lat, listing.lng)
+              : null,
         }))
         .filter((listing) => {
           if (!listing.distance) return false;
           return radius ? listing.distance <= radius : true;
         });
 
-      // Sort by distance if requested
+      // Sắp xếp theo khoảng cách nếu được yêu cầu
       if (sortBy === 'distance') {
-        filteredListings.sort((a: any, b: any) => (a.distance || 0) - (b.distance || 0));
+        filteredListings.sort(
+          (a: any, b: any) => (a.distance || 0) - (b.distance || 0),
+        );
       }
     }
 
@@ -187,6 +216,7 @@ export class ListingsService {
             phone: true,
             avatar: true,
             email: true,
+            isActive: true, // Chọn isActive để kiểm tra trạng thái
           },
         },
         _count: {
@@ -200,6 +230,11 @@ export class ListingsService {
 
     if (!listing) {
       throw new NotFoundException('Listing not found');
+    }
+
+    // Kiểm tra xem chủ trọ có đang hoạt động không
+    if (!listing.landlord.isActive) {
+      throw new NotFoundException('Listing not found (Landlord inactive)');
     }
 
     return listing;
@@ -250,7 +285,8 @@ export class ListingsService {
       throw new ForbiddenException('You can only update your own listings');
     }
 
-    const newStatus = listing.status === 'AVAILABLE' ? 'UNAVAILABLE' : 'AVAILABLE';
+    const newStatus =
+      listing.status === 'AVAILABLE' ? 'UNAVAILABLE' : 'AVAILABLE';
 
     const updated = await this.prisma.listing.update({
       where: { id },
@@ -290,7 +326,9 @@ export class ListingsService {
     }
 
     if (listing.landlordId !== landlordId) {
-      throw new ForbiddenException('You can only add photos to your own listings');
+      throw new ForbiddenException(
+        'You can only add photos to your own listings',
+      );
     }
 
     const photo = await this.prisma.photo.create({
@@ -315,7 +353,9 @@ export class ListingsService {
     }
 
     if (photo.listing.landlordId !== landlordId) {
-      throw new ForbiddenException('You can only delete photos from your own listings');
+      throw new ForbiddenException(
+        'You can only delete photos from your own listings',
+      );
     }
 
     await this.prisma.photo.delete({
@@ -361,17 +401,22 @@ export class ListingsService {
     };
   }
 
-  // Haversine formula to calculate distance between two coordinates
-  private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-    const R = 6371; // Earth radius in km
+  // Công thức Haversine tính khoảng cách giữa hai tọa độ
+  private calculateDistance(
+    lat1: number,
+    lng1: number,
+    lat2: number,
+    lng2: number,
+  ): number {
+    const R = 6371; // Bán kính KM của Trái Đất
     const dLat = this.toRad(lat2 - lat1);
     const dLng = this.toRad(lng2 - lng1);
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(this.toRad(lat1)) *
-      Math.cos(this.toRad(lat2)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
+        Math.cos(this.toRad(lat2)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }

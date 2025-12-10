@@ -107,7 +107,10 @@ export class NotificationsService {
     });
   }
 
-  private getNotificationTitle(type: NotificationType, data: NotificationData): string {
+  private getNotificationTitle(
+    type: NotificationType,
+    data: NotificationData,
+  ): string {
     switch (type) {
       case NotificationType.MESSAGE:
         return `Tin nhắn từ ${data.senderName}`;
@@ -120,7 +123,10 @@ export class NotificationsService {
     }
   }
 
-  private getNotificationBody(type: NotificationType, data: NotificationData): string {
+  private getNotificationBody(
+    type: NotificationType,
+    data: NotificationData,
+  ): string {
     switch (type) {
       case NotificationType.MESSAGE:
         return data.message || '';

@@ -11,4 +11,4 @@ import { NotificationsModule } from '../notifications/notifications.module';
   providers: [ChatService],
   exports: [ChatService],
 })
-export class ChatModule { }
+export class ChatModule {}

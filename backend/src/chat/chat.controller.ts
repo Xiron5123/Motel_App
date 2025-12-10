@@ -9,7 +9,12 @@ import {
   UseGuards,
   Delete,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetUser } from '../auth/decorators/get-user.decorator';
@@ -21,7 +26,7 @@ import { SendMessageDto } from './dto/send-message.dto';
 @UseGuards(JwtAuthGuard)
 @Controller('chat')
 export class ChatController {
-  constructor(private chatService: ChatService) { }
+  constructor(private chatService: ChatService) {}
 
   @Post('conversations')
   @ApiOperation({ summary: 'Tạo hoặc lấy conversation với user khác' })
@@ -29,7 +34,11 @@ export class ChatController {
     @GetUser('id') userId: string,
     @Body() dto: CreateConversationDto,
   ) {
-    return this.chatService.getOrCreateConversation(userId, dto.participantId, dto.listingId);
+    return this.chatService.getOrCreateConversation(
+      userId,
+      dto.participantId,
+      dto.listingId,
+    );
   }
 
   @Get('conversations')
@@ -78,7 +87,13 @@ export class ChatController {
     @GetUser('id') userId: string,
     @Body() dto: SendMessageDto,
   ) {
-    return this.chatService.sendMessage(conversationId, userId, dto.content, dto.imageUrl, dto.listingId);
+    return this.chatService.sendMessage(
+      conversationId,
+      userId,
+      dto.content,
+      dto.imageUrl,
+      dto.listingId,
+    );
   }
 
   @Patch('conversations/:id/read')

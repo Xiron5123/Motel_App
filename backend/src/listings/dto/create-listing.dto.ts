@@ -28,7 +28,11 @@ export class CreateListingDto {
   @Min(0)
   price: number;
 
-  @ApiProperty({ example: 2000000, description: 'Tiền cọc (VNĐ)', required: false })
+  @ApiProperty({
+    example: 2000000,
+    description: 'Tiền cọc (VNĐ)',
+    required: false,
+  })
   @IsNumber()
   @IsOptional()
   @Min(0)
@@ -70,7 +74,13 @@ export class CreateListingDto {
   lng?: number;
 
   @ApiProperty({
-    example: ['wifi', 'parking', 'kitchen', 'washing_machine', 'air_conditioner'],
+    example: [
+      'wifi',
+      'parking',
+      'kitchen',
+      'washing_machine',
+      'air_conditioner',
+    ],
     type: [String],
   })
   @IsArray()

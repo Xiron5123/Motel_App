@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EventsGateway } from '../events/events.gateway';
 
@@ -7,10 +14,14 @@ export class ChatService {
   constructor(
     private prisma: PrismaService,
     private eventsGateway: EventsGateway,
-  ) { }
+  ) {}
 
   // Tạo hoặc lấy conversation giữa 2 users
-  async getOrCreateConversation(userId1: string, userId2: string, listingId?: string) {
+  async getOrCreateConversation(
+    userId1: string,
+    userId2: string,
+    listingId?: string,
+  ) {
     // Tìm conversation đã tồn tại với đúng 2 users này
     const conversations = await this.prisma.conversation.findMany({
       where: {
@@ -62,10 +73,7 @@ export class ChatService {
       const conversation = await this.prisma.conversation.create({
         data: {
           participants: {
-            create: [
-              { userId: userId1 },
-              { userId: userId2 },
-            ],
+            create: [{ userId: userId1 }, { userId: userId2 }],
           },
         },
         include: {
@@ -248,15 +256,24 @@ export class ChatService {
       (p) => p.userId === userId,
     );
     if (!isParticipant) {
-      throw new ForbiddenException('Bạn không phải là thành viên của cuộc trò chuyện này');
+      throw new ForbiddenException(
+        'Bạn không phải là thành viên của cuộc trò chuyện này',
+      );
     }
 
     return conversation;
   }
 
   // Lấy messages trong conversation
-  async getMessages(conversationId: string, userId: string, limit = 50, before?: string) {
-    console.log(`[ChatService] getMessages for conversation: ${conversationId}, user: ${userId}`);
+  async getMessages(
+    conversationId: string,
+    userId: string,
+    limit = 50,
+    before?: string,
+  ) {
+    console.log(
+      `[ChatService] getMessages for conversation: ${conversationId}, user: ${userId}`,
+    );
     // Verify user is participant
     await this.getConversationById(conversationId, userId);
 
@@ -384,7 +401,9 @@ export class ChatService {
     }
 
     if (message.senderId !== userId) {
-      throw new ForbiddenException('Bạn chỉ có thể thu hồi tin nhắn của chính mình');
+      throw new ForbiddenException(
+        'Bạn chỉ có thể thu hồi tin nhắn của chính mình',
+      );
     }
 
     const updatedMessage = await this.prisma.message.update({
@@ -444,7 +463,9 @@ export class ChatService {
     );
 
     if (!isParticipant) {
-      throw new ForbiddenException('Bạn không phải là thành viên của cuộc trò chuyện này');
+      throw new ForbiddenException(
+        'Bạn không phải là thành viên của cuộc trò chuyện này',
+      );
     }
 
     await this.prisma.message.update({

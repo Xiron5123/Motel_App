@@ -1,5 +1,18 @@
-import { Controller, Post, Body, UseGuards, Get, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Get,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -10,12 +23,15 @@ import { CurrentUser } from './decorators/current-user.decorator';
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Đăng ký tài khoản mới' })
   @ApiResponse({ status: 201, description: 'Đăng ký thành công' })
-  @ApiResponse({ status: 409, description: 'Email hoặc số điện thoại đã đăng ký' })
+  @ApiResponse({
+    status: 409,
+    description: 'Email hoặc số điện thoại đã đăng ký',
+  })
   async register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
@@ -24,7 +40,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đăng nhập' })
   @ApiResponse({ status: 200, description: 'Đăng nhập thành công' })
-  @ApiResponse({ status: 401, description: 'Thông tin đăng nhập không chính xác' })
+  @ApiResponse({
+    status: 401,
+    description: 'Thông tin đăng nhập không chính xác',
+  })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
@@ -51,7 +70,10 @@ export class AuthController {
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Yêu cầu đặt lại mật khẩu' })
-  @ApiResponse({ status: 200, description: 'Nếu email tồn tại, link đặt lại mật khẩu đã được gửi' })
+  @ApiResponse({
+    status: 200,
+    description: 'Nếu email tồn tại, link đặt lại mật khẩu đã được gửi',
+  })
   async forgotPassword(@Body('email') email: string) {
     return this.authService.forgotPassword(email);
   }
@@ -60,8 +82,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Đặt lại mật khẩu với token' })
   @ApiResponse({ status: 200, description: 'Đặt lại mật khẩu thành công' })
-  @ApiResponse({ status: 401, description: 'Token không hợp lệ hoặc đã hết hạn' })
-  async resetPassword(@Body('token') token: string, @Body('newPassword') newPassword: string) {
+  @ApiResponse({
+    status: 401,
+    description: 'Token không hợp lệ hoặc đã hết hạn',
+  })
+  async resetPassword(
+    @Body('token') token: string,
+    @Body('newPassword') newPassword: string,
+  ) {
     return this.authService.resetPassword(token, newPassword);
   }
 
@@ -70,7 +98,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Gửi OTP đến email' })
   @ApiResponse({ status: 200, description: 'OTP đã được gửi đến email' })
   async sendOTP(@Body('email') email: string) {
-    console.log(`[AuthController] Received send-otp request for email: ${email}`);
+    console.log(
+      `[AuthController] Received send-otp request for email: ${email}`,
+    );
     return this.authService.sendOTP(email);
   }
 

@@ -24,19 +24,13 @@ export class BookingsController {
 
   @Post()
   @ApiOperation({ summary: 'Tạo booking request (RENTER)' })
-  createBooking(
-    @GetUser('id') userId: string,
-    @Body() dto: CreateBookingDto,
-  ) {
+  createBooking(@GetUser('id') userId: string, @Body() dto: CreateBookingDto) {
     return this.bookingsService.createBooking(userId, dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách bookings (theo role)' })
-  getBookings(
-    @GetUser('id') userId: string,
-    @GetUser('role') userRole: Role,
-  ) {
+  getBookings(@GetUser('id') userId: string, @GetUser('role') userRole: Role) {
     return this.bookingsService.getBookings(userId, userRole);
   }
 
@@ -47,11 +41,7 @@ export class BookingsController {
     @GetUser('id') userId: string,
     @GetUser('role') userRole: Role,
   ) {
-    return this.bookingsService.getBookingById(
-      bookingId,
-      userId,
-      userRole,
-    );
+    return this.bookingsService.getBookingById(bookingId, userId, userRole);
   }
 
   @Patch(':id/status')

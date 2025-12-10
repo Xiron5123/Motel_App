@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async findAll(page = 1, limit = 10, search?: string) {
     const skip = (page - 1) * limit;
@@ -89,6 +89,50 @@ export class UsersService {
 
     return user;
   }
+
+  // Cho phép user update profile của chính mình (name, avatar, phone)
+  async updateMyProfile(userId: string, data: any) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Chỉ cho phép update một số trường an toàn
+    const allowedFields = ['name', 'avatar', 'phone'];
+    const updateData: any = {};
+
+    for (const field of allowedFields) {
+      if (data[field] !== undefined) {
+        updateData[field] = data[field];
+      }
+    }
+
+    // Nếu email được update, kiểm tra trùng
+    if (data.email && data.email !== user.email) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: data.email },
+      });
+      if (existingUser) {
+        throw new Error('Email already in use');
+      }
+      updateData.email = data.email;
+    }
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        avatar: true,
+        createdAt: true,
+      },
+    });
+  }
   async update(id: string, data: any) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) {
@@ -97,7 +141,9 @@ export class UsersService {
 
     // If email is being updated, check if it's already taken
     if (data.email && data.email !== user.email) {
-      const existingUser = await this.prisma.user.findUnique({ where: { email: data.email } });
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: data.email },
+      });
       if (existingUser) {
         throw new Error('Email already in use');
       }

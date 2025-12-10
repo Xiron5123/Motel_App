@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsNumber, IsArray, Min, IsEnum } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsArray,
+  Min,
+  IsEnum,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ListingStatus } from '@prisma/client';
 
@@ -69,7 +76,11 @@ export class QueryListingDto {
   @IsNumber()
   lng?: number;
 
-  @ApiProperty({ required: false, example: 5, description: 'Radius in kilometers' })
+  @ApiProperty({
+    required: false,
+    example: 5,
+    description: 'Radius in kilometers',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
@@ -98,10 +109,21 @@ export class QueryListingDto {
   @ApiProperty({
     required: false,
     example: 'price_asc',
-    enum: ['price_asc', 'price_desc', 'distance', 'created_desc', 'created_asc'],
-    description: 'Sort order'
+    enum: [
+      'price_asc',
+      'price_desc',
+      'distance',
+      'created_desc',
+      'created_asc',
+    ],
+    description: 'Sort order',
   })
   @IsOptional()
   @IsString()
-  sortBy?: 'price_asc' | 'price_desc' | 'distance' | 'created_desc' | 'created_asc';
+  sortBy?:
+    | 'price_asc'
+    | 'price_desc'
+    | 'distance'
+    | 'created_desc'
+    | 'created_asc';
 }

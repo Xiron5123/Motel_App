@@ -17,7 +17,7 @@ export class BookingsService {
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
     private eventsGateway: EventsGateway,
-  ) { }
+  ) {}
 
   // Tạo booking request (RENTER only)
   async createBooking(renterId: string, dto: CreateBookingDto) {
@@ -125,15 +125,15 @@ export class BookingsService {
     const where =
       userRole === Role.LANDLORD
         ? {
-          // Landlord xem bookings cho listings của mình
-          listing: {
-            landlordId: userId,
-          },
-        }
+            // Landlord xem bookings cho listings của mình
+            listing: {
+              landlordId: userId,
+            },
+          }
         : {
-          // Renter xem bookings mình đã tạo
-          renterId: userId,
-        };
+            // Renter xem bookings mình đã tạo
+            renterId: userId,
+          };
 
     return this.prisma.bookingRequest.findMany({
       where,
@@ -208,8 +208,7 @@ export class BookingsService {
 
     // Kiểm tra quyền truy cập
     const isOwner =
-      booking.renterId === userId ||
-      booking.listing.landlordId === userId;
+      booking.renterId === userId || booking.listing.landlordId === userId;
 
     if (!isOwner) {
       throw new ForbiddenException('Không có quyền truy cập');
@@ -238,12 +237,7 @@ export class BookingsService {
     }
 
     // Validate state transitions
-    this.validateStatusTransition(
-      booking,
-      dto.status,
-      userId,
-      userRole,
-    );
+    this.validateStatusTransition(booking, dto.status, userId, userRole);
 
     // Cập nhật status
     const updated = await this.prisma.bookingRequest.update({
@@ -296,22 +290,14 @@ export class BookingsService {
     if (
       (newStatus === BookingStatus.ACCEPTED ||
         newStatus === BookingStatus.REJECTED) &&
-      (userRole !== Role.LANDLORD ||
-        booking.listing.landlordId !== userId)
+      (userRole !== Role.LANDLORD || booking.listing.landlordId !== userId)
     ) {
-      throw new ForbiddenException(
-        'Chỉ landlord mới có thể accept/reject',
-      );
+      throw new ForbiddenException('Chỉ landlord mới có thể accept/reject');
     }
 
     // Chỉ renter mới có thể CANCEL
-    if (
-      newStatus === BookingStatus.CANCELLED &&
-      booking.renterId !== userId
-    ) {
-      throw new ForbiddenException(
-        'Chỉ renter mới có thể cancel',
-      );
+    if (newStatus === BookingStatus.CANCELLED && booking.renterId !== userId) {
+      throw new ForbiddenException('Chỉ renter mới có thể cancel');
     }
 
     // Validate transitions

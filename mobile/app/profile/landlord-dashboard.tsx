@@ -125,7 +125,7 @@ export default function LandlordDashboardScreen() {
                 <View style={styles.actions}>
                     <TouchableOpacity
                         style={[styles.actionButton, styles.editButton]}
-                        onPress={() => router.push({ pathname: '/(tabs)/post-listing', params: { id: item.id } })}
+                        onPress={() => router.push(`/listing/edit/${item.id}`)}
                     >
                         <Feather name="edit-2" size={14} color="#2563EB" />
                         <Typography variant="caption" style={styles.editText}>Sửa</Typography>

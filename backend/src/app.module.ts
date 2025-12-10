@@ -33,10 +33,12 @@ import { DashboardModule } from './dashboard/dashboard.module';
       serveRoot: '/uploads',
     }),
     // Rate limiting: 100 requests per minute
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // 1 minute
-      limit: 1000, // 1000 requests (increased for dev)
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 1 minute
+        limit: 1000, // 1000 requests (increased for dev)
+      },
+    ]),
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -60,4 +62,4 @@ import { DashboardModule } from './dashboard/dashboard.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}
