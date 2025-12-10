@@ -15,16 +15,15 @@
 ### Prerequisites
 
 - Node.js >= 18.x
-- pnpm >= 8.x
-- Docker & Docker Compose
-- Expo Go app (mobile testing)
+- npm >= 9.x (hoặc pnpm/yarn)
+- Docker & Docker Compose (cho PostgreSQL)
+- Expo Go app (để test trên điện thoại)
 
 ### 1. Clone & Install
 
 ```bash
 git clone https://github.com/Xiron5123/Motel_App.git
 cd Motel_App
-pnpm install
 ```
 
 ### 2. Backend Setup
@@ -39,12 +38,15 @@ docker-compose up -d
 cp .env.example .env
 # Edit DATABASE_URL, JWT_SECRET, etc.
 
+# Install dependencies
+npm install
+
 # Run migrations
 npx prisma migrate dev
 npx prisma db seed  # Optional: seed data
 
 # Start server
-pnpm run start:dev
+npm run start:dev
 ```
 
 ✅ Backend: `http://localhost:3000`  
@@ -55,14 +57,31 @@ pnpm run start:dev
 ```bash
 cd mobile
 
+# Install dependencies
+npm install
+
 # Configure API URL in src/services/api.ts
 # Update to your local IP: http://192.168.x.x:3000
 
 # Start Expo
-pnpm start
+npx expo start
 ```
 
 Scan QR code with **Expo Go** app or press `a`/`i` for emulator.
+
+### 4. Admin Web Setup (Optional)
+
+```bash
+cd admin-web
+
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+```
+
+✅ Admin Dashboard: `http://localhost:5173`
 
 ---
 
@@ -70,18 +89,19 @@ Scan QR code with **Expo Go** app or press `a`/`i` for emulator.
 
 ```
 Motel/
-├── backend/              # NestJS API
+├── backend/              # NestJS API Server
 │   ├── prisma/          # Schema & migrations
 │   ├── src/
-│   │   ├── auth/        # Authentication
+│   │   ├── auth/        # Authentication (JWT, OAuth)
 │   │   ├── users/       # User management
 │   │   ├── listings/    # Listings CRUD
-│   │   ├── chat/        # Real-time chat
+│   │   ├── chat/        # Real-time chat (Socket.IO)
+│   │   ├── bookings/    # Booking requests
 │   │   ├── roommates/   # Roommate matching
 │   │   └── ...
 │   └── docker-compose.yml
 │
-├── mobile/              # React Native App
+├── mobile/              # React Native App (Expo)
 │   ├── app/            # Expo Router (file-based)
 │   │   ├── (auth)/     # Login, Register
 │   │   ├── (tabs)/     # Main tabs
@@ -89,11 +109,13 @@ Motel/
 │   ├── src/
 │   │   ├── components/ # UI components
 │   │   ├── services/   # API client
-│   │   ├── stores/     # Zustand state
-│   │   └── ...
+│   │   └── store/      # Zustand state
 │   └── app.json
 │
-└── pnpm-workspace.yaml
+├── admin-web/           # Admin Dashboard (React + Vite)
+│   └── src/
+│
+└── README.md
 ```
 
 ---
